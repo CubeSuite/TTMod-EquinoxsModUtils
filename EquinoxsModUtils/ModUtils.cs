@@ -310,7 +310,7 @@ namespace EquinoxsModUtils
         /// Registers a new Unlock to be added to the TechTree once GameDefines and TechTreeState have loaded.
         /// </summary>
         /// <param name="details">Details of the new Unlock. Ensure that all are provided.</param>
-        public static void addNewUnlock(NewUnlockDetails details) {
+        public static void AddNewUnlock(NewUnlockDetails details) {
             if (details.dependencyNames.Count > 2) {
                 LogEMUError($"New Tech '{details.displayName}' cannot have more than 2 dependencies. Abandoning attempt to add.");
                 return;
