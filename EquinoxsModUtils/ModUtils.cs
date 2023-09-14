@@ -7,7 +7,9 @@ using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using EquinoxsModUtils.Patches;
+using FluffyUnderware.DevTools.Extensions;
 using HarmonyLib;
+using MessagePack.Formatters;
 using TriangleNet;
 using UnityEngine;
 
@@ -19,13 +21,12 @@ namespace EquinoxsModUtils
         // Plugin Details
         private const string MyGUID = "com.equinox.EquinoxsModUtils";
         private const string PluginName = "EquinoxsModUtils";
-        private const string VersionString = "1.0.0";
+        private const string VersionString = "1.1.0";
 
         private static readonly Harmony Harmony = new Harmony(MyGUID);
         public static ManualLogSource Log = new ManualLogSource(PluginName);
 
         // Objects & Variables
-        public static bool shouldLog = true;
         public static bool hasGameStateLoaded = false;
         public static bool hasGameDefinesLoaded = false;
         public static bool hasSaveStateLoaded = false;
@@ -33,6 +34,9 @@ namespace EquinoxsModUtils
 
         private static List<Unlock> unlocksToAdd = new List<Unlock>();
         private static Dictionary<string, List<string>> unlockDependencies = new Dictionary<string, List<string>>();
+
+        private static Dictionary<string, int> resourceCache = new Dictionary<string, int>();
+        private static Dictionary<string, int> unlockCache = new Dictionary<string, int>();
 
         internal static Dictionary<string, string> hashTranslations = new Dictionary<string, string>();
         internal static List<TechTreeState.UnlockState> unlockStatesToAdd = new List<TechTreeState.UnlockState>();
@@ -49,7 +53,7 @@ namespace EquinoxsModUtils
             CheckBepInExConfig();
 
             Harmony.CreateAndPatchAll(typeof(LocsUtilityPatch));
-            Harmony.CreateAndPatchAll(typeof(SaveStatePatch));
+            //Harmony.CreateAndPatchAll(typeof(SaveStatePatch));
 
             Logger.LogInfo($"PluginName: {PluginName}, VersionString: {VersionString} is loaded.");
             Log = Logger;
@@ -78,15 +82,11 @@ namespace EquinoxsModUtils
         }
         
         internal static void LogEMUInfo(string message) {
-            if (shouldLog) {
-                Debug.Log($"[EMU]: {message}");
-            }
+            Debug.Log($"[EMU]: {message}");
         }
 
         internal static void LogEMUWarning(string message) {
-            if (shouldLog) {
-                Debug.LogWarning($"[EMU]: {message}");
-            }
+            Debug.LogWarning($"[EMU]: {message}");
         }
 
         internal static void LogEMUError(string message) {
@@ -136,10 +136,27 @@ namespace EquinoxsModUtils
             if (MachineManager.instance == null) return;
             if (TechTreeState.instance != null) {
                 hasTechTreeStateLoaded = true;
+                CleanUnlockStates();
                 LogEMUInfo($"Adding {unlocksToAdd.Count} new UnlockStates");
                 foreach (TechTreeState.UnlockState state in unlockStatesToAdd) {
-                    TechTreeState.instance.unlockStates.AddItem(state);
-                    LogEMUInfo($"Added UnlockState for tech '{state.unlockRef.displayName}'");
+                    bool foundState = false;
+                    for(int i = 0; i < TechTreeState.instance.unlockStates.Count(); i++) {
+                        TechTreeState.UnlockState existingState = TechTreeState.instance.unlockStates[i];
+                        if (existingState.unlockRef == null) continue;
+                        if(state.unlockRef.uniqueId == existingState.unlockRef.uniqueId) {
+                            TechTreeState.instance.unlockStates[i] = state;
+                            foundState = true;
+                            LogEMUInfo($"Updated UnlockState for Unlock #{state.unlockRef.uniqueId}");
+                            i = TechTreeState.instance.unlockStates.Count();
+
+                            LogEMUInfo($"Existing tech name: {LocsUtility.TranslateStringFromHash(existingState.unlockRef.displayNameHash)}");
+                        }
+                    }
+
+                    if (!foundState) {
+                        TechTreeState.instance.unlockStates.AddItem(state);
+                        LogEMUInfo($"Added UnlockState for Unlock #{state.unlockRef.uniqueId}");
+                    }
                 }
 
                 TechTreeStateLoaded?.Invoke(TechTreeState.instance, EventArgs.Empty);
@@ -148,6 +165,26 @@ namespace EquinoxsModUtils
         }
 
         // Add New Techs
+
+        private static void CleanUnlockStates() {
+            LogEMUInfo("Cleaning Unlock States");
+            for(int i = 0; i < TechTreeState.instance.unlockStates.Count(); i++) {
+                TechTreeState.UnlockState state = TechTreeState.instance.unlockStates[i];
+                if (state.unlockRef == null) continue;
+
+                bool unlockFound = false;
+                foreach(Unlock unlock in GameDefines.instance.unlocks) {
+                    if(unlock.uniqueId == state.unlockRef.uniqueId) {
+                        unlockFound = true;
+                    }
+                }
+
+                if (!unlockFound) {
+                    TechTreeState.instance.unlockStates.RemoveAt(i);
+                    LogEMUInfo($"Could not find Unlock for UnlockState #{i}. Removed.");
+                }
+            }
+        }
 
         private static int GetNewUnlockUniqueID() {
             if (!hasGameDefinesLoaded) {
@@ -197,13 +234,23 @@ namespace EquinoxsModUtils
         /// Language may affect this function.
         /// </summary>
         /// <param name="name">The displayName of the desired resource</param>
+        /// <param name="shouldLog">Whether [EMU] Info messages should be logged</param>
         /// <returns>ResourceInfo if successful, null if not.</returns>
-        public static ResourceInfo GetResourceInfoByName(string name) {
-            LogEMUInfo($"Looking for resource with name '{name}'");
+        public static ResourceInfo GetResourceInfoByName(string name, bool shouldLog = false) {
+            if (shouldLog) LogEMUInfo($"Looking for resource with name '{name}'");
             if (hasGameDefinesLoaded) {
+                if (resourceCache.ContainsKey(name)) {
+                    if (shouldLog) LogEMUInfo("Found resource in cache");
+                    return GameDefines.instance.resources[resourceCache[name]];
+                }
+
                 foreach (ResourceInfo info in GameDefines.instance.resources) {
                     if (info.displayName == name) {
-                        LogEMUInfo($"Found resource with name '{name}'");
+                        if (shouldLog) LogEMUInfo($"Found resource with name '{name}'");
+                        if (!resourceCache.ContainsKey(name)) {
+                            resourceCache.Add(name, GameDefines.instance.resources.IndexOf(info));
+                        }
+
                         return info;
                     }
                 }
@@ -223,9 +270,10 @@ namespace EquinoxsModUtils
         /// Language may affect this function.
         /// </summary>
         /// <param name="name">The displayName of the desired Resource</param>
+        /// <param name="shouldLog">Whether [EMU] Info messages should be logged</param>
         /// <returns>resID if successful, -1 otherwise</returns>
-        public static int GetResourceIDByName(string name) {
-            LogEMUInfo($"Looking for ID of resource with name '{name}'");
+        public static int GetResourceIDByName(string name, bool shouldLog = false) {
+            if (shouldLog) LogEMUInfo($"Looking for ID of resource with name '{name}'");
             if (hasSaveStateLoaded) {
                 ResourceInfo info = GetResourceInfoByName(name);
                 if (info != null) {
@@ -252,9 +300,10 @@ namespace EquinoxsModUtils
         /// </summary>
         /// <param name="output1Name">The displayName of one of the outputs</param>
         /// <param name="output2Name">The displayName of the other output</param>
+        /// <param name="shouldLog">Whether [EMU] Info messages should be logged</param>
         /// <returns>Thresher recipe if successful, null if not</returns>
-        public static SchematicsRecipeData FindThresherRecipeFromOutputs(string output1Name, string output2Name) {
-            LogEMUInfo($"Looking for thresher recipe with outputs: '{output1Name}', '{output2Name}'");
+        public static SchematicsRecipeData FindThresherRecipeFromOutputs(string output1Name, string output2Name, bool shouldLog = false) {
+            if (shouldLog) LogEMUInfo($"Looking for thresher recipe with outputs: '{output1Name}', '{output2Name}'");
             if (!hasGameDefinesLoaded) {
                 LogEMUWarning("FindThresherRecipeFromOutputs() called before GameDefines.instance has loaded");
                 LogEMUWarning("Try using the event ModUtils.GameDefinesLoaded or checking with ModUtils.hasGameDefinesLoaded");
@@ -265,7 +314,7 @@ namespace EquinoxsModUtils
                 if (schematic.outputTypes.Count() == 2) {
                     if ((schematic.outputTypes[0].displayName == output1Name && schematic.outputTypes[1].displayName == output2Name) ||
                         (schematic.outputTypes[0].displayName == output2Name && schematic.outputTypes[1].displayName == output1Name)) {
-                        LogEMUInfo("Found thresher recipe");
+                        if (shouldLog) LogEMUInfo("Found thresher recipe");
                         return schematic;
                     }
                 }
@@ -285,20 +334,32 @@ namespace EquinoxsModUtils
         /// Language may affect this function.
         /// </summary>
         /// <param name="name">The displayName of the desired Unlock</param>
+        /// <param name="shouldLog">Whether [EMU] Info messages should be logged</param>
         /// <returns>Unlock if successful, null if not</returns>
-        public static Unlock GetUnlockByName(string name) {
-            LogEMUInfo($"Looking for Unlock with name '{name}'");
-            if (hasGameDefinesLoaded) {
-                foreach (Unlock tech in GameDefines.instance.unlocks) {
-                    if (tech.displayNameHash == LocsUtility.GetHashString(name)) {
-                        LogEMUInfo("Found Unlock");
-                        return tech;
-                    }
-                }
-            }
-            else {
+        public static Unlock GetUnlockByName(string name, bool shouldLog = false) {
+            if (shouldLog) LogEMUInfo($"Looking for Unlock with name '{name}'");
+
+            if (!hasGameDefinesLoaded) {
                 LogEMUWarning("GetUnlockByName() called before GameDefines has loaded");
                 LogEMUWarning("Try using the event ModUtils.GameDefinesLoaded or checking with ModUtils.hasGameDefinesLoaded");
+                return null;
+            }
+
+            if (unlockCache.ContainsKey(name)) {
+                if (GameDefines.instance.unlocks.Count > unlockCache[name]) {
+                    if (shouldLog) LogEMUInfo("Found unlock in cache");
+                    return GameDefines.instance.unlocks[unlockCache[name]];
+                }
+            }
+
+            foreach (Unlock tech in GameDefines.instance.unlocks) {
+                if (tech.displayNameHash == LocsUtility.GetHashString(name)) {
+                    if (shouldLog) LogEMUInfo("Found Unlock");
+                    if (!unlockCache.ContainsKey(tech.displayNameHash)) {
+                        unlockCache.Add(tech.displayNameHash, tech.uniqueId);
+                    }
+                    return tech;
+                }
             }
 
             LogEMUWarning($"Couldn't find Unlock with name '{name}'");
@@ -310,7 +371,8 @@ namespace EquinoxsModUtils
         /// Registers a new Unlock to be added to the TechTree once GameDefines and TechTreeState have loaded.
         /// </summary>
         /// <param name="details">Details of the new Unlock. Ensure that all are provided.</param>
-        public static void AddNewUnlock(NewUnlockDetails details) {
+        /// <param name="shouldLog">Whether [EMU] Info messages should be logged</param>
+        public static void AddNewUnlock(NewUnlockDetails details, bool shouldLog = false) {
             if (details.dependencyNames.Count > 2) {
                 LogEMUError($"New Tech '{details.displayName}' cannot have more than 2 dependencies. Abandoning attempt to add.");
                 return;
@@ -365,7 +427,7 @@ namespace EquinoxsModUtils
                 unlockedUpgrades = new List<UpgradeInfo>()
             });
 
-            LogEMUInfo($"Successfully created new Unlock '{details.displayName}'");
+            if (shouldLog) LogEMUInfo($"Successfully created new Unlock '{details.displayName}'");
         }
 
         /// <summary>
@@ -373,13 +435,14 @@ namespace EquinoxsModUtils
         /// </summary>
         /// <param name="unlockID">The uniqueId of the Unlock to update. This is returned by addNewUnlock()</param>
         /// <param name="sprite">The new sprite to use</param>
-        public static void UpdateUnlockSprite(int unlockID, Sprite sprite) {
-            LogEMUInfo($"Trying to update sprite of Unlock with ID '{unlockID}'");
+        /// <param name="shouldLog">Whether [EMU] Info messages should be logged</param>
+        public static void UpdateUnlockSprite(int unlockID, Sprite sprite, bool shouldLog = false) {
+            if (shouldLog) LogEMUInfo($"Trying to update sprite of Unlock with ID '{unlockID}'");
             if (hasGameDefinesLoaded) {
                 try {
                     Unlock unlock = GameDefines.instance.unlocks[unlockID];
                     unlock.sprite = sprite;
-                    LogEMUInfo($"Updated sprite of Unlock with ID '{unlockID}'");
+                    if (shouldLog) LogEMUInfo($"Updated sprite of Unlock with ID '{unlockID}'");
                 }
                 catch (Exception e) {
                     LogEMUError($"Error occurred while trying to update sprite of Unlock with ID '{unlockID}'");
@@ -398,12 +461,13 @@ namespace EquinoxsModUtils
         /// </summary>
         /// <param name="displayName">The displayName of the Unlock to update</param>
         /// <param name="sprite">The new sprite to use</param>
-        public static void UpdateUnlockSprite(string displayName, Sprite sprite) {
-            LogEMUInfo($"Trying to update sprite of Unlock '{displayName}'");
+        /// <param name="shouldLog">Whether [EMU] Info messages should be logged</param>
+        public static void UpdateUnlockSprite(string displayName, Sprite sprite, bool shouldLog = false) {
+            if (shouldLog) LogEMUInfo($"Trying to update sprite of Unlock '{displayName}'");
             if (hasGameDefinesLoaded) {
                 Unlock unlock = GetUnlockByName(displayName);
                 unlock.sprite = sprite;
-                LogEMUInfo($"Updated sprite of Unlock '{displayName}'");
+                if (shouldLog) LogEMUInfo($"Updated sprite of Unlock '{displayName}'");
             }
             else {
                 LogEMUWarning("UpdateUnlockSprite() called before GameDefines has loaded");
@@ -416,13 +480,14 @@ namespace EquinoxsModUtils
         /// </summary>
         /// <param name="unlockID">The uniqueId of the Unlock to update. This is returned by addNewUnlock()</param>
         /// <param name="treePosition">The new treePosition value to use</param>
-        public static void UpdateUnlockTreePosition(int unlockID, int treePosition) {
-            LogEMUInfo($"Trying to update treePosition of Unlock with ID '{unlockID}'");
+        /// <param name="shouldLog">Whether [EMU] Info messages should be logged</param>
+        public static void UpdateUnlockTreePosition(int unlockID, float treePosition, bool shouldLog = false) {
+            if (shouldLog) LogEMUInfo($"Trying to update treePosition of Unlock with ID '{unlockID}'");
             if (hasGameDefinesLoaded) {
                 try {
                     Unlock unlock = GameDefines.instance.unlocks[unlockID];
                     unlock.treePosition = treePosition;
-                    LogEMUInfo($"Updated treePosition of Unlock with ID '{unlockID}'");
+                    if (shouldLog) LogEMUInfo($"Updated treePosition of Unlock with ID '{unlockID}'");
                 }
                 catch (Exception e) {
                     LogEMUError($"Error occurred while trying to update treePosition of Unlock with ID '{unlockID}'");
@@ -441,12 +506,18 @@ namespace EquinoxsModUtils
         /// </summary>
         /// <param name="displayName">The displayName of the Unlock to update</param>
         /// <param name="treePosition">The new treePosition value to use</param>
-        public static void UpdateUnlockTreePosition(string displayName, int treePosition) {
-            LogEMUInfo($"Trying to update treePosition of Unlock '{displayName}'");
+        /// <param name="shouldLog">Whether [EMU] Info messages should be logged</param>
+        public static void UpdateUnlockTreePosition(string displayName, float treePosition, bool shouldLog = false) {
+            if (shouldLog) LogEMUInfo($"Trying to update treePosition of Unlock '{displayName}'");
             if (hasGameDefinesLoaded) {
                 Unlock unlock = GetUnlockByName(displayName);
-                unlock.treePosition = treePosition;
-                LogEMUInfo($"Updated treePosition of Unlock '{displayName}'");
+                if(unlock != null) {
+                    GameDefines.instance.unlocks[unlock.uniqueId].treePosition = treePosition;
+                    if (shouldLog) LogEMUInfo($"Updated treePosition of Unlock '{displayName}' to {treePosition}");
+                }
+                else {
+                    LogEMUWarning($"Could not update treePosition of unknown Unlock '{displayName}'");
+                }
             }
             else {
                 LogEMUWarning("UpdateUnlockTreePosition() called before GameDefines has loaded");

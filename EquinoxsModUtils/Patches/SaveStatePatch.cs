@@ -33,18 +33,18 @@ namespace EquinoxsModUtils.Patches
         [HarmonyPatch(typeof(SaveState), "LoadFileData", typeof(SaveState.SaveMetadata), typeof(string))]
         [HarmonyPostfix]
         static void loadMod(SaveState __instance, SaveState.SaveMetadata saveMetadata, string replayLocation) {
-            ModUtils.LogEMUInfo("Loading Custom Unlocks...");
-            
+            ModUtils.LogEMUInfo("Loading Custom UnlockSates...");
+
             string filePath = $"{dataFolder}/{saveMetadata.worldName}.json";
             if (File.Exists(filePath)) {
                 string[] jsons = File.ReadAllLines(filePath);
-                foreach(string json in jsons) {
-                    if(string.IsNullOrEmpty(json)) continue;
+                foreach (string json in jsons) {
+                    if (string.IsNullOrEmpty(json)) continue;
                     TechTreeState.UnlockState state = (TechTreeState.UnlockState)JsonUtility.FromJson(json, typeof(TechTreeState.UnlockState));
                     ModUtils.unlockStatesToAdd.Add(state);
                 }
 
-                ModUtils.LogEMUInfo($"Loaded {ModUtils.unlockStatesToAdd.Count} Custom Unlocks");
+                ModUtils.LogEMUInfo($"Finished Loading {ModUtils.unlockStatesToAdd.Count} Custom UnlockStates");
             }
         }
     }
