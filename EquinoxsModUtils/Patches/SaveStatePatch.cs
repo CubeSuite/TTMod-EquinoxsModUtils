@@ -17,11 +17,11 @@ namespace EquinoxsModUtils.Patches
         [HarmonyPostfix]
         static void saveMod(SaveState __instance, string saveLocation, bool saveToPersistent = true) {
             int count = ModUtils.unlockStatesToAdd.Count;
-            ModUtils.LogEMUInfo($"Saving {count} Custom Unlocks...");
+            ModUtils.LogEMUInfo($"Saving {count} custom Unlocks to file...");
 
             Directory.CreateDirectory(dataFolder);
             List<string> unlockStateJsons = new List<string>();
-            foreach(TechTreeState.UnlockState state in ModUtils.unlockStatesToAdd) {
+            foreach (TechTreeState.UnlockState state in ModUtils.unlockStatesToAdd) {
                 unlockStateJsons.Add(JsonUtility.ToJson(state));
             }
 
@@ -33,7 +33,7 @@ namespace EquinoxsModUtils.Patches
         [HarmonyPatch(typeof(SaveState), "LoadFileData", typeof(SaveState.SaveMetadata), typeof(string))]
         [HarmonyPostfix]
         static void loadMod(SaveState __instance, SaveState.SaveMetadata saveMetadata, string replayLocation) {
-            ModUtils.LogEMUInfo("Loading Custom UnlockSates...");
+            ModUtils.LogEMUInfo("Loading custom Unlocks from file...");
 
             string filePath = $"{dataFolder}/{saveMetadata.worldName}.json";
             if (File.Exists(filePath)) {
@@ -44,7 +44,7 @@ namespace EquinoxsModUtils.Patches
                     ModUtils.unlockStatesToAdd.Add(state);
                 }
 
-                ModUtils.LogEMUInfo($"Finished Loading {ModUtils.unlockStatesToAdd.Count} Custom UnlockStates");
+                ModUtils.LogEMUInfo($"Loaded {ModUtils.unlockStatesToAdd.Count} Custom Unlocks");
             }
         }
     }
