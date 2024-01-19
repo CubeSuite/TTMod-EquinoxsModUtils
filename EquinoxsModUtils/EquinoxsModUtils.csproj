@@ -66,6 +66,7 @@
     <Compile Include="Patches\LocsUtilityPatch.cs" />
     <Compile Include="ModUtils.cs" />
     <Compile Include="Patches\SaveStatePatch.cs" />
+    <Compile Include="Patches\TechTreeStatePatch.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResourceNames.cs" />
     <Compile Include="UnlockNames.cs" />
