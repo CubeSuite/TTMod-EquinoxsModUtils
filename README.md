@@ -1,11 +1,32 @@
-# TTMod-EquinoxsModUtils
-A collection of utilities for modding the game Techtonica that make it easier to interact with Resources, Schematics and Unlocks
+# Contents
+
+- [EquinoxsModUtils](#equinoxsmodutils)
+  - [Objects & Variables](#objects--variables)
+  - [Functions](#functions)
+    - [Resources](#resources)
+      - [GetResourceInfoByName](#getresourceinfobyname)
+      - [GetResourceIDByName](#getresourceidbyname)
+    - [Schematics](#schematics)
+      - [FindThresherRecipeFromOutputs](#findthresherrecipefromoutputs)
+    - [Unlocks (Techs)](#unlocks-techs)
+      - [GetUnlockById](#getunlockbyid)
+      - [GetUnlockByName](#getunlockbyname)
+      - [AddNewUnlock](#addnewunlock)
+      - [UpdateUnlockSprite](#updateunlocksprite)
+  - [Events](#events)
+    - [GameStateLoaded](#gamestateloaded)
+    - [GameDefinesLoaded](#gamedefinesloaded)
+    - [SaveStateLoaded](#savestateloaded)
+    - [TechTreeStateLoaded](#techtreestateloaded)
+  - [How To Add A New Unlock / Tech](#how-to-add-a-new-unlock--tech)
+
+# EquinoxsModUtils
+A collection of utilities for modding the game Techtonica that make it easier to interact with Resources, Schematics and Unlocks. Can be used to add new Unlocks to the Tech Tree.
 
 ## Objects & Variables
 
-```ModUtils.ResourceNames``` and ```ModUtils.UnlockNames``` are two static classes that contain const strings of the names of Resources and Unlocks. These have been extracted from the game, so they are a perfect match. Using these allows you to avoid typos, which is especially important when using functions like ```GetResourceInfoByName(string name)```.
+```ModUtils.ResourceNames``` and ```ModUtils.UnlockNames``` are two static classes that contain const strings of the names of ```Resources``` and ```Unlocks```. These have been extracted from the game, so they are a perfect match. Using these allows you to avoid typos, which is especially important when using functions like ```GetResourceInfoByName(string name)```.
 
-* ```public static bool shouldLog``` sets whether \[EMU\] messages should be logged. **Note:** other mods may overwrite your value for this, depending on load order.  
 * ```public static bool hasGameStateLoaded``` set to true once ```GameState.instance``` has loaded. Useful for checking if data you need has loaded yet.  
 * ```public static bool hasGameDefinesLoaded``` set to true once ```GameDefines.instance``` has loaded. Useful for checking if data you need has loaded yet.  
 * ```public static bool hasSaveStateLoaded``` set to true once ```SaveState.instance``` has loaded. Useful for checking if data you need has loaded yet.  
@@ -15,9 +36,11 @@ A collection of utilities for modding the game Techtonica that make it easier to
 
 ### Resources
 
-```public static ResourceInfo GetResourceInfoByName(string name)```
+#### GetResourceInfoByName
 
-This function allows you to find the ResourceInfo of any resource by using it's display name.
+```public static ResourceInfo GetResourceInfoByName(string name, bool shouldLog = false)```
+
+This function allows you to find the ```ResourceInfo``` of any resource by using its display name. Returns ```null``` if not found.
 Example use:
 
 ```csharp
@@ -26,10 +49,11 @@ if (info != null) {
   info.ingredient1Quantity = 2;
 }
 ```
+#### GetResourceIDByName
 
-```public static int GetResourceIDByName(string name)```
+```public static int GetResourceIDByName(string name, bool shouldLog = false)```
 
-This function finds the unique resource ID for the given resource name.
+This function finds the unique resource ID for the given resource name. Returns ```null``` if not found.
 Example use:
 
 ```csharp
@@ -40,9 +64,11 @@ if (limestoneID != -1) {
 ```
 ### Schematics
 
-```public static SchematicsRecipeData FindThresherRecipeFromOutputs(string output1Name, string output2Name)```
+#### FindThresherRecipeFromOutputs
 
-This function finds a thresher recipe based on it's two outputs. This does not work for recipes with one output.
+```public static SchematicsRecipeData FindThresherRecipeFromOutputs(string output1Name, string output2Name, bool shouldLog = false)```
+
+This function finds a thresher recipe based on its two outputs. This does not work for recipes with one output. Returns ```null``` if not found.
 Example use:
 
 ```csharp
@@ -53,9 +79,25 @@ if (recipe != null) {
 ```
 ### Unlocks (Techs)
 
-```public static Unlock GetUnlockByName(string name)```
+#### GetUnlockById
 
-This function finds the Unlock that matches the name given in the argument. Returns null if not found.
+```public static Unlock GetUnlockByID(int id, bool shouldLog = false)```
+
+This function finds the ```Unlock``` with the id given in the argument. Returns ```null``` if not found.
+Example use:
+
+```
+Unlock firstUnlock = ModUtils.GetUnlockByID(0);
+if (firstUnlock != null){
+  Debug.Log($"First Unlock: {firstUnlock.displayName}");
+}
+```
+
+#### GetUnlockByName
+
+```public static Unlock GetUnlockByName(string name, bool shouldLog = false)```
+
+This function finds the ```Unlock``` that matches the name given in the argument. Returns ```null``` if not found.
 Example use:
 
 ```csharp
@@ -64,12 +106,16 @@ if (stackInserterUnlock != null) {
   Sprite stackInserterSprite = stackInserterUnlock.sprite;
 }
 ```
-```public static void addNewUnlock(NewUnlockDetails details)```
+#### AddNewUnlock
 
-This function takes basic information about a new Unlock / Tech and registers it to be added at the correct times during the load cycle. Handles all the heavy lifting for you.
+```public static void AddNewUnlock(NewUnlockDetails details, bool shouldLog = false)```
+
+This function takes basic information about a new ```Unlock``` and registers it to be added at the correct times during the load cycle. Handles all the heavy lifting for you.
 See the end section of this readme for a guide on adding new Unlocks.
 
-```public static void UpdateUnlockSprite(int unlockID, Sprite sprite)```
+#### UpdateUnlockSprite
+
+```public static void UpdateUnlockSprite(int unlockID, Sprite sprite, bool shouldLog = false)```
 
 This function is used to change the sprite of an unlock. Useful for if you want your new Unlock to use the same sprite as a vanilla Unlock.
 Example use:
@@ -83,7 +129,7 @@ if (conveyor2Unlock != null) {
 }
 ```
 
-```public static void UpdateUnlockSprite(string displayName, Sprite sprite)```
+```public static void UpdateUnlockSprite(string displayName, Sprite sprite, bool shouldLog = false)```
 
 This function does the same as above, but takes the ```displayName``` of the Unlock to find the Unlock to update.
 Exmaple use:
@@ -95,7 +141,9 @@ if (conveyor2Unlock != null) {
 }
 ```
 
-```public static void UpdateUnlockTreePosition(int unlockID, int treePosition)```
+#### UpdateUnlockTreePosition
+
+```public static void UpdateUnlockTreePosition(int unlockID, int treePosition, bool shouldLog = false)```
 
 This function updates the horizontal position of the Unlock on the Tech Tree. Useful for aligning new Unlocks with vanilla ones.
 Example use:
@@ -109,7 +157,7 @@ if (conveyor2Unlock != null) {
 }
 ```
 
-```public static void UpdateUnlockTreePosition(string displayName, int treePosition)```
+```public static void UpdateUnlockTreePosition(string displayName, int treePosition, bool shouldLog = false)```
 
 This function does the same as above, but takes the ```displayName``` of the Unlock to find the Unlock to update.
 Example use:
@@ -122,6 +170,8 @@ if (conveyor2Unlock != null) {
 ```
 
 ## Events
+
+### GameStateLoaded
 
 ```public static event EventHandler GameStateLoaded;```
 
@@ -141,6 +191,8 @@ private void OnGameStateLoaded(object sender, EventArgs e) {
   ...
 }
 ```
+
+### GameDefinesLoaded
 
 ```public static event EventHandler GameDefinesLoaded;```
 
@@ -162,6 +214,8 @@ private void OnGameDefinesLoaded(object sender, EventArgs e) {
 }
 ```
 
+### SaveStateLoaded
+
 ```public static event EventHandler SaveStateLoaded;```
 
 This event is fired when ```SaveState.instance``` is no longer null. Use this event to run code that needs to access ```SaveState.instance``` at the correct time.
@@ -179,6 +233,8 @@ private void OnSaveStateLoaded(object sender, EventArgs e) {
   string worldName = SaveState.instance.levelName;
 }
 ```
+
+### TechTreeStateLoaded
 
 ```public static event EventHandler TechTreeStateLoaded;```
 
@@ -205,6 +261,7 @@ private void OnTechTreeStateLoaded(object sender, EventArgs e) {
 First, in your ```Awake()``` function, create an instance of the ```NewUnlockDetails``` class. Ensure that you provide data for every field like in the example below.
 If your new Unlock does not depend on any others, do not include the ```dependencyNames``` field. An Unlock is limited to two dependencies. EMU will not add the new Unlock if you provide more than this.
 If you want to set the Sprite to a vanilla one, leave that field for now and continue this guide to the end.
+You must use CoreType.Red (Tier 1, purple in-game) or CoreType.Blue (Tier 2, blue in-game). Attempting to use another colour will result in the new Unlock not being added.
 
 ```csharp
 void Awake() {
@@ -222,7 +279,7 @@ void Awake() {
 }
 ```
 
-Next, call ```ModUtils.addNewTech(NewUnlockDetails details)```, passing in your ```NewUnlockDetails```.
+Next, call ```ModUtils.addNewTech(NewUnlockDetails details)```, passing in your instance of ```NewUnlockDetails```.
 
 ```csharp
 void Awake() {
@@ -232,9 +289,9 @@ void Awake() {
 ```
 
 This function registers the new Unlock to be added to the game at the correct time using the events above. If you used your own Sprite, you're done now. EMU will handle adding the Unlock and tracking its UnlockState from here.
-You can use the ```UpdateUnlock...``` functions to alter the new ```Unlock``` once GameDefines has loaded.
+You can use the ```UpdateUnlock...``` functions to alter the new ```Unlock``` once ```GameDefines``` has loaded.
 
-To assign a vanilla sprite to the new unlock, we need to find the sprite once GameDefines has loaded. Create an event called ```OnGameDefinesLoaded``` and bind it to ModUtils.GameDefinesLoaded.
+To assign a vanilla sprite to the new unlock, we need to find the sprite once ```GameDefines``` has loaded. Create an event called ```OnGameDefinesLoaded``` and bind it to ```ModUtils.GameDefinesLoaded```.
 In the example below, we'll use the sprite of the Stack Inserter Unlock.
 
 ```csharp
@@ -246,17 +303,18 @@ void Awake() {
 }
 
 private void OnGameDefinesLoaded(object sender, EventArgs e) {
-  Unlock stackInserterUnlock = ModUtils.GetUnlockByName(ModUtils.UnlockNames.StackInserter);
+  Unlock stackInserterUnlock = ModUtils.GetUnlockByName(UnlockNames.StackInserter);
   if (stackInserterUnlock != null) {
     ModUtils.UpdateUnlockSprite("Name of my new Unlock", stackInserterUnlock.sprite);
   }
 }
 ```
+
 You can also use this event to horizontally align your new Unlock with vanilla ones on the TechTree:
 
 ```csharp
 private void OnGameDefinesLoaded(object sender, EventArgs e) {
-  Unlock stackInserterUnlock = ModUtils.GetUnlockByName(ModUtils.UnlockNames.StackInserter);
+  Unlock stackInserterUnlock = ModUtils.GetUnlockByName(UnlockNames.StackInserter);
   if (stackInserterUnlock != null) {
     ModUtils.UpdateUnlockSprite("Name of my new Unlock", stackInserterUnlock.sprite);
     ModUtils.UpdateUnlockTreePosition("Name of my new Unlock", stackInserterUnlock.treePosition);
@@ -265,4 +323,4 @@ private void OnGameDefinesLoaded(object sender, EventArgs e) {
 ```
 
 Just make sure that your new unlock requires a tier above the one you referenced in the function, or they'll overlap.
-More UpdateUnlock... functions will be added in the future as required.
+More ```UpdateUnlock...``` functions will be added in the future as required.
