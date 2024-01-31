@@ -190,7 +190,6 @@ namespace EquinoxsModUtils
         private static void CleanUnlockStates() {
             LogEMUInfo("Cleaning Unlock States");
             for (int i = 0; i < TechTreeState.instance.unlockStates.Count();) {
-                Debug.Log($"i = {i} | unlockStates.Count() == {TechTreeState.instance.unlockStates.Count()}");
                 TechTreeState.UnlockState state = TechTreeState.instance.unlockStates[i];
                 if (state.unlockRef == null) continue;
                 if (!GameDefines.instance.unlocks.Contains(state.unlockRef)) {
@@ -470,8 +469,8 @@ namespace EquinoxsModUtils
             }
 
             if(details.coreTypeNeeded != ResearchCoreDefinition.CoreType.Red &&
-               details.coreTypeNeeded != ResearchCoreDefinition.CoreType.Blue) {
-                LogEMUError($"New Tech '{details.displayName}' needs to use either Red (Purple in-game) or Blue cores. Aborting attempt to add tech.");
+               details.coreTypeNeeded != ResearchCoreDefinition.CoreType.Green) {
+                LogEMUError($"New Tech '{details.displayName}' needs to use either Red (Purple in-game) or Green (Blue in-game) cores. Aborting attempt to add tech.");
                 return;
             }
 
@@ -527,7 +526,7 @@ namespace EquinoxsModUtils
         /// <summary>
         /// Used to change the sprite of an Unlock after GameDefines has loaded
         /// </summary>
-        /// <param name="unlockID">The uniqueId of the Unlock to update. This is returned by addNewUnlock()</param>
+        /// <param name="unlockID">The uniqueId of the Unlock to update.</param>
         /// <param name="sprite">The new sprite to use</param>
         /// <param name="shouldLog">Whether [EMU] Info messages should be logged for this call</param>
         public static void UpdateUnlockSprite(int unlockID, Sprite sprite, bool shouldLog = false) {
@@ -572,7 +571,7 @@ namespace EquinoxsModUtils
         /// <summary>
         /// Used to change the treePosition of an Unlock after GameDefines has loaded
         /// </summary>
-        /// <param name="unlockID">The uniqueId of the Unlock to update. This is returned by addNewUnlock()</param>
+        /// <param name="unlockID">The uniqueId of the Unlock to update.</param>
         /// <param name="treePosition">The new treePosition value to use</param>
         /// <param name="shouldLog">Whether [EMU] Info messages should be logged for this call</param>
         public static void UpdateUnlockTreePosition(int unlockID, float treePosition, bool shouldLog = false) {
@@ -617,6 +616,58 @@ namespace EquinoxsModUtils
             else {
                 LogEMUWarning("UpdateUnlockTreePosition() called before GameDefines has loaded");
                 LogEMUWarning("Try using the event ModUtils.GameDefinesLoaded or checking with ModUtils.hasGameDefinesLoaded");
+            }
+        }
+
+        /// <summary>
+        /// Used to change the requiredTier of an Unlock after GameDefines has loaded
+        /// </summary>
+        /// <param name="unlockID">The uniqueId of the Unlock to update.</param>
+        /// <param name="tier">The new requiredTier value to use</param>
+        /// <param name="shouldLog">Whether [EMU] Info messages should be logged for this call</param>
+        public static void UpdateUnlockTier(int unlockID, TechTreeState.ResearchTier tier, bool shouldLog = false) {
+            if (shouldLog) LogEMUInfo($"Trying to update tier of Unlock with ID '{unlockID}'");
+            if (hasGameDefinesLoaded) {
+                try {
+                    Unlock unlock = GetUnlockByID(unlockID);
+                    unlock.requiredTier = tier;
+                    if (shouldLog) LogEMUInfo($"Updated requiredTier of Unlock with ID '{unlockID}'");
+                }
+                catch (Exception e) {
+                    LogEMUError($"Error occurred while trying to update requiredTier of Unlock with ID '{unlockID}'");
+                    LogEMUError(e.Message);
+                    LogEMUError(e.StackTrace);
+                }
+            }
+            else {
+                LogEMUWarning($"UpdateUnlockTier() called before GameDefines has loaded");
+                LogEMUWarning($"Try using the event ModUtils.GameDefinesLoaded or checking with ModUtils.hasGameDefinesLoaded");
+            }
+        }
+
+        /// <summary>
+        /// Used to change the requiredTier of an Unlock after GameDefines has loaded
+        /// </summary>
+        /// <param name="displayName">The displayName of the Unlock to update</param>
+        /// <param name="tier">The new requiredTier value to use</param>
+        /// <param name="shouldLog">Whether [EMU] Info messages should be logged for this call</param>
+        public static void UpdateUnlockTier(string displayName, TechTreeState.ResearchTier tier, bool shouldLog = false) {
+            if (shouldLog) LogEMUInfo($"Trying to update tier of Unlock '{displayName}'");
+            if (hasGameDefinesLoaded) {
+                try {
+                    Unlock unlock = GetUnlockByName(displayName);
+                    unlock.requiredTier = tier;
+                    if (shouldLog) LogEMUInfo($"Updated requiredTier of Unlock '{displayName}'");
+                }
+                catch (Exception e) {
+                    LogEMUError($"Error occurred while trying to update requiredTier of Unlock '{displayName}'");
+                    LogEMUError(e.Message);
+                    LogEMUError(e.StackTrace);
+                }
+            }
+            else {
+                LogEMUWarning($"UpdateUnlockTier() called before GameDefines has loaded");
+                LogEMUWarning($"Try using the event ModUtils.GameDefinesLoaded or checking with ModUtils.hasGameDefinesLoaded");
             }
         }
 
