@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Resources;
 using System.Text;
 using System.Threading.Tasks;
 using HarmonyLib;
@@ -12,6 +13,8 @@ namespace EquinoxsModUtils.Patches
     public class SaveStatePatch
     {
         public static string dataFolder = $"{Application.persistentDataPath}/Equinox's Mod Utils";
+
+        private static List<string> addedJsons = new List<string>();
 
         [HarmonyPatch(typeof(SaveState), "SaveToFile")]
         [HarmonyPostfix]
@@ -40,12 +43,36 @@ namespace EquinoxsModUtils.Patches
                 string[] jsons = File.ReadAllLines(filePath);
                 foreach (string json in jsons) {
                     if (string.IsNullOrEmpty(json)) continue;
+                    if(addedJsons.Contains(json)) continue;
                     TechTreeState.UnlockState state = (TechTreeState.UnlockState)JsonUtility.FromJson(json, typeof(TechTreeState.UnlockState));
-                    ModUtils.unlockStatesToAdd.Add(state);
+
+                    int existingIndex = -1;
+                    if (isUnlockStateUnique(state, out existingIndex)) {
+                        ModUtils.unlockStatesToAdd.Add(state);
+                        addedJsons.Add(json);
+                    }
+                    else {
+                        ModUtils.unlockStatesToAdd[existingIndex] = state;
+                        ModUtils.LogEMUInfo($"Overwrote UnlockState for Unlock '{state.unlockRef.displayNameHash}' with state loaded from file");
+                    }
                 }
 
                 ModUtils.LogEMUInfo($"Loaded {ModUtils.unlockStatesToAdd.Count} Custom Unlocks");
             }
+        }
+
+
+        static bool isUnlockStateUnique(TechTreeState.UnlockState state, out int index) { 
+            for(int i = 0; i < ModUtils.unlockStatesToAdd.Count; i++) {
+                TechTreeState.UnlockState stateToAdd = ModUtils.unlockStatesToAdd[i];
+                if (stateToAdd.unlockRef.displayNameHash == state.unlockRef.displayNameHash) {
+                    index = i;
+                    return false;
+                }
+            }
+
+            index = -1;
+            return true;
         }
     }
 }

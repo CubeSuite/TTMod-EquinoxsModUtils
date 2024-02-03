@@ -201,6 +201,25 @@ namespace EquinoxsModUtils
                     ++i;
                 }
             }
+
+            LogEMUInfo($"Clearing duplicate unlock states");
+            List<TechTreeState.UnlockState> uniqueStates = new List<TechTreeState.UnlockState>();
+            for(int i = 0; i < TechTreeState.instance.unlockStates.Count(); i++) {
+                bool isUnique = true;
+                foreach(TechTreeState.UnlockState state in uniqueStates) {
+                    if (TechTreeState.instance.unlockStates[i].unlockRef.uniqueId == state.unlockRef.uniqueId) {
+                        isUnique = false;
+                        break;
+                    }
+                }
+
+                if (isUnique) uniqueStates.Add(TechTreeState.instance.unlockStates[i]);
+            }
+
+            int numDuplicates = TechTreeState.instance.unlockStates.Count() - uniqueStates.Count;
+            LogEMUInfo($"Found '{uniqueStates.Count}' unique states");
+            LogEMUInfo($"Removing {numDuplicates} duplicates");
+            TechTreeState.instance.unlockStates = uniqueStates.ToArray();
         }
 
         private static void CleanTechProgress() {
@@ -225,7 +244,10 @@ namespace EquinoxsModUtils
                 bool foundState = false;
                 for (int i = 0; i < TechTreeState.instance.unlockStates.Count(); i++) {
                     TechTreeState.UnlockState existingState = TechTreeState.instance.unlockStates[i];
-                    if (existingState.unlockRef == null) continue;
+                    if (existingState.unlockRef == null) {
+                        LogEMUInfo("Skipping unlock with null unlockRef");
+                        continue;
+                    }
                     if (state.unlockRef.uniqueId == existingState.unlockRef.uniqueId) {
                         TechTreeState.instance.unlockStates[i] = state;
                         foundState = true;
@@ -233,6 +255,7 @@ namespace EquinoxsModUtils
                         i = TechTreeState.instance.unlockStates.Count();
 
                         LogEMUInfo($"Existing tech name: {LocsUtility.TranslateStringFromHash(existingState.unlockRef.displayNameHash)}");
+                        break;
                     }
                 }
 
