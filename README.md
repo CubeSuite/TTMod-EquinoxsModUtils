@@ -212,6 +212,7 @@ ModUtils.SetPrivateField("_currentBuilder", Player.instance.builder, builder);
 #### BuildMachine
 
 ```public static void BuildMachine(int resID, GridInfo gridInfo, bool shouldLog = false, int recipe = -1, ConveyorBuildInfo.ChainData? chainData = null, bool reverseConveyor = false)```
+
 ```public static void BuildMachine(string resourceName, GridInfo gridInfo, bool shouldLog = false, int recipe = -1, ConveyorBuildInfo.ChainData? chainData = null, bool reverseConveyor = false)```
 
 These functions are used to build new machines in the correct way to avoid machines being built with invisible static meshes. Note, if you try build an Assembler with a recipe set, it will still be partially invisible.
