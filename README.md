@@ -19,7 +19,7 @@
     - [Machine Building](#machine-building)
       - [BuildMachine](#buildmachine)
         - [Building A Simple Machine](#building-a-simple-machine)
-        - [Building A Filter Inserter / Assembler With Recipe](#building-a-filter-inserter-/-assembler-with-recipe)
+        - [Building A Filter Inserter / Assembler With Recipe](#building-a-filter-inserter--assembler-with-recipe)
         - [Building A Conveyor](#building-a-conveyor)
   - [Events](#events)
     - [GameStateLoaded](#gamestateloaded)
