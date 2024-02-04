@@ -13,6 +13,14 @@
       - [GetUnlockByName](#getunlockbyname)
       - [AddNewUnlock](#addnewunlock)
       - [UpdateUnlockSprite](#updateunlocksprite)
+    - [Private Fields](#private-fields)
+      - [GetPrivateField](#getprivatefield) 
+      - [SetPrivateField](#setprivatefield)
+    - [Machine Building](#machine-building)
+      - [BuildMachine](#buildmachine)
+        - [Building A Simple Machine](#building-a-simple-machine)
+        - [Building A Filter Inserter / Assembler With Recipe](#building-a-filter-inserter-/-assembler-with-recipe)
+        - [Building A Conveyor](#building-a-conveyor)
   - [Events](#events)
     - [GameStateLoaded](#gamestateloaded)
     - [GameDefinesLoaded](#gamedefinesloaded)
@@ -167,6 +175,102 @@ Unlock conveyor2Unlock = ModUtils.GetUnlockByName(ModUtils.UnlockNames.ConveyorB
 if (conveyor2Unlock != null) {
   ModUtils.UpdateUnlockTreePosition("My Custom Unlock", conveyor2Unlock.treePosition);
 }
+```
+
+### Private Fields
+
+#### GetPrivateField
+
+```public static object GetPrivateField<T>(string name, T instance)```
+
+This function retrieves the value of a private field of a non-static class ```T``` from the instance of that class given in the arguments. Note that you do not need to include the ```<T>``` after the function name, this is provided by the ```T``` argument.
+Returns null if the field cannot be found (and logs an error), can also return null if the value of the field is null for the given instance.
+Example use:
+
+```
+object _currentBuilderValue = ModUtils.GetPrivateField("_currentBuilder", Player.instance.builder);
+if (object != null){
+  PlayerBuilder builder = (PlayerBuilder)_currentBuilderValue;
+}
+```
+
+#### SetPrivateField
+
+```public static void SetPrivateField<T>(string name, T instance, object value)```
+
+This function sets the value of a private field of a non-static class ```T``` of the instance of that class given in the arguments. Note that you do not need to include the ```<T>``` after the function name, this is provided by the ```T``` argument.
+Logs an error if the field cannot be found.
+Example use:
+
+```
+ProceduralBuilder builder = Player.instance.GetBuilderForType(...);
+ModUtils.SetPrivateField("_currentBuilder", Player.instance.builder, builder);
+```
+
+### Machine Building
+
+#### BuildMachine
+
+```public static void BuildMachine(int resID, GridInfo gridInfo, bool shouldLog = false, int recipe = -1, ConveyorBuildInfo.ChainData? chainData = null, bool reverseConveyor = false)```
+```public static void BuildMachine(string resourceName, GridInfo gridInfo, bool shouldLog = false, int recipe = -1, ConveyorBuildInfo.ChainData? chainData = null, bool reverseConveyor = false)```
+
+These functions are used to build new machines in the correct way to avoid machines being built with invisible static meshes. Note, if you try build an Assembler with a recipe set, it will still be partially invisible.
+For most machines, you only need to provide the first two arguments. For building an Assembler with the recipe set, or a Fitler Inserter with the filter set, provide the ```shouldLog``` and ```recipe``` arguments.
+For building Conveyors, provide all arguments. Use ```-1``` for the ```recipe``` field. I recommend enabling logging while developing your mod and turning it off when you are ready to release.
+
+Example uses:
+
+##### Building A Simple Machine
+```
+bool shouldLog = true;
+Vector3Int position = new Vector3Int(100, 10, 100);
+float yawRotation = 0;
+GridInfo gridInfo = new GridInfo(){
+  minPos = position,
+  yawRot = yawRotation
+};
+ 
+ModUtils.BuildMachine(ResourceNames.Smelter, gridInfo, shouldLog);
+```
+
+#### Building A Filter Inserter / Assembler With Recipe
+```
+bool shouldLog = true;
+Vector3Int position = new Vector3Int(100, 10, 100);
+float yawRotation = 0;
+GridInfo gridInfo = new GridInfo(){
+  minPos = position,
+  yawRot = yawRotation
+};
+
+int recipe = assemblerInstance.targetRecipe;
+int filter = filterInserterInstance.filterType;
+
+ModUtils.BuildMachine(ResourceNames.Assembler, gridInfo, shouldLog, recipe);
+ModUtils.BuildMachine(ResourceNames.FilterInserter, inserterGridInfo, shouldLog, filter);
+```
+
+#### Building A Conveyor
+
+```
+bool shouldLog = true;
+Vector3Int position = new Vector3Int(100, 10, 100);
+float yawRotation = 0;
+GridInfo gridInfo = new GridInfo(){
+  minPos = position,
+  yawRot = yawRotation
+};
+
+ChainData chainData = new ChainData(){
+  count = 1,
+  shape = beltShape,
+  rotation = yawRotation,
+  start = position
+};
+
+bool buildInReverse = true;
+ 
+ModUtils.BuildMachine(ResourceNames.Smelter, gridInfo, shouldLog, -1, chainData, buildInReverse);
 ```
 
 ## Events
