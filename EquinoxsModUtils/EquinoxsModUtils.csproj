@@ -43,6 +43,9 @@
     <Reference Include="BepInEx">
       <HintPath>D:\ steam\steamapps\common\Techtonica\BepInEx\core\BepInEx.dll</HintPath>
     </Reference>
+    <Reference Include="Mirror">
+      <HintPath>D:\ steam\steamapps\common\Techtonica\Techtonica_Data\Managed\Mirror.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -62,6 +65,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MachineBuilder.cs" />
     <Compile Include="NewUnlockDetails.cs" />
     <Compile Include="Patches\LocsUtilityPatch.cs" />
     <Compile Include="ModUtils.cs" />
