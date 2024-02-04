@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using BepInEx;
 using BepInEx.Configuration;
@@ -370,6 +371,28 @@ namespace EquinoxsModUtils
             }
         }
 
+        /// <summary>
+        /// Returns the MachineTypeEnum for the provided resID. Returns MachineTypeEnum.NONE for failed calls.
+        /// </summary>
+        /// <param name="resID">The ID of the ResourceInfo that you want the MachineTypeEnum value for</param>
+        public static MachineTypeEnum GetMachineTypeFromResID(int resID) {
+            if (!hasSaveStateLoaded) {
+                LogEMUError("GetMachineTypeFromResID() called before SaveState.instance has loaded");
+                LogEMUWarning("Try using the event ModUtils.SaveStateLoaded or checking with ModUtils.hasSaveStateLoaded");
+                return MachineTypeEnum.NONE;
+            }
+
+            try {
+                return ((BuilderInfo)SaveState.GetResInfoFromId(resID)).GetInstanceType();
+            }
+            catch (Exception e) {
+                LogEMUError($"Error occurred during GetMachineTypeFromResID(resID = {resID})");
+                LogEMUError($"{e.Message}");
+                LogEMUError($"{e.StackTrace}");
+                return MachineTypeEnum.NONE;
+            }
+        }
+
         #endregion
 
         #region Schematics
@@ -692,6 +715,93 @@ namespace EquinoxsModUtils
                 LogEMUWarning($"UpdateUnlockTier() called before GameDefines has loaded");
                 LogEMUWarning($"Try using the event ModUtils.GameDefinesLoaded or checking with ModUtils.hasGameDefinesLoaded");
             }
+        }
+
+        #endregion
+
+        #region Machine Building
+
+        /// <summary>
+        /// Builds a machine that corresponds to the resID argument at the position and rotation given in gridInfo.
+        /// </summary>
+        /// <param name="resId">The resource ID of the type of machine you would like to build.</param>
+        /// <param name="gridInfo">A GridInfo instance that contains the minPos and yawRotation of the machine you would like to build.</param>
+        /// <param name="shouldLog">Whether EMU Info messages should be logged for this call</param>
+        /// <param name="recipe">Optional - The recipe or filter that you would like to the machine to have selected.</param>
+        /// <param name="chainData">Optional - The ChainData to use for building a conveyor belt</param>
+        /// <param name="reverseConveyor">Optional - The value to use for ConveyorBuildInfo.isReversed</param>
+        public static void BuildMachine(int resId, GridInfo gridInfo, bool shouldLog = false, int recipe = -1, ConveyorBuildInfo.ChainData? chainData = null, bool reverseConveyor = false) {
+            if (!hasSaveStateLoaded) {
+                LogEMUError("BuildMachine() called before SaveState.instance has loaded");
+                LogEMUWarning("Try using the event ModUtils.SaveStateLoaded or checking with ModUtils.hasSaveStateLoaded");
+                return;
+            }
+
+            MachineBuilder.buildMachine(resId, gridInfo, shouldLog, recipe, chainData, reverseConveyor);
+        }
+
+        /// <summary>
+        /// Builds a machine that corresponds to the resourceName argument at the position and rotation given in gridInfo.
+        /// </summary>
+        /// <param name="resourceName">The name of the machine that you would like to build</param>
+        /// <param name="gridInfo">A GridInfo instance that contains the minPos and yawRotation of the machine you would like to build.</param>
+        /// <param name="shouldLog">Whether EMU Info messages should be logged for this call</param>
+        /// <param name="recipe">Optional - The recipe or filter that you would like to the machine to have selected.</param>
+        /// <param name="chainData">Optional - The ChainData to use for building a conveyor belt</param>
+        /// <param name="reverseConveyor">Optional - The value to use for ConveyorBuildInfo.isReversed</param>
+        public static void BuildMachine(string resourceName, GridInfo gridInfo, bool shouldLog = false, int recipe = -1, ConveyorBuildInfo.ChainData? chainData = null, bool reverseConveyor = false) {
+            if (!hasSaveStateLoaded) {
+                LogEMUError("BuildMachine() called before SaveState.instance has loaded");
+                LogEMUWarning("Try using the event ModUtils.SaveStateLoaded or checking with ModUtils.hasSaveStateLoaded");
+                return;
+            }
+
+            int resID = GetResourceIDByName(resourceName);
+            if(resID == -1) {
+                LogEMUError($"Could not build machine '{resourceName}'. Couldn't find a resource matching this name.");
+                LogEMUWarning($"Try using the ResourceNames class for a perfect match.");
+                return;
+            }
+
+            MachineBuilder.buildMachine(resID, gridInfo, shouldLog, recipe, chainData, reverseConveyor);
+        }
+
+        #endregion
+
+        #region Reflection
+
+        /// <summary>
+        /// Get the value of a private field from an instance of a non-static class.
+        /// </summary>
+        /// <typeparam name="T">The class that the field belongs to</typeparam>
+        /// <param name="name">The name of the field</param>
+        /// <param name="instance">The instance of the class that you would like to get the value from</param>
+        /// <returns>The value of the field if successful (it can be null), null otherwise</returns>
+        public static object GetPrivateField<T>(string name, T instance) {
+            FieldInfo field = typeof(T).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
+            if(field == null) {
+                LogEMUError($"Could not find the field '{name}' under type {typeof(T)}. Aborting attempt to get value");
+                return null;
+            }
+
+            return field.GetValue(instance);
+        }
+
+        /// <summary>
+        /// Sets the value of a private field on an instance of a non-static class.
+        /// </summary>
+        /// <typeparam name="T">The class that the field belongs to</typeparam>
+        /// <param name="name">The name of the field</param>
+        /// <param name="instance">The instance of the class that you would like to modify</param>
+        /// <param name="value">The new value to set</param>
+        public static void SetPrivateField<T>(string name, T instance, object value) {
+            FieldInfo field = typeof(T).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
+            if(field == null) {
+                LogEMUError($"Could not find the field '{name}' under type {typeof(T)}. Aborting attempt to set value");
+                return;
+            }
+
+            field.SetValue(instance, value);
         }
 
         #endregion
