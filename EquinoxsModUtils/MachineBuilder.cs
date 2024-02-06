@@ -14,7 +14,7 @@ namespace EquinoxsModUtils
 {
     internal static class MachineBuilder
     {
-        internal static void buildMachine(int resId, GridInfo gridInfo, bool shouldLog, int recipe, ConveyorBuildInfo.ChainData? chainData, bool reverseConveyor) {
+        internal static void buildMachine(int resId, GridInfo gridInfo, bool shouldLog, int variationIndex, int recipe, ConveyorBuildInfo.ChainData? chainData, bool reverseConveyor) {
             MachineTypeEnum type = ModUtils.GetMachineTypeFromResID(resId);
             if(type == MachineTypeEnum.NONE) {
                 ResourceInfo resourceInfo = SaveState.GetResInfoFromId(resId);
@@ -47,7 +47,7 @@ namespace EquinoxsModUtils
                 case MachineTypeEnum.Floor: doFloorBuild(resId, gridInfo); break;
                 case MachineTypeEnum.ResearchCore: doResearchCoreBuild(resId, gridInfo); break;
                 case MachineTypeEnum.Stairs: doStairsBuild(resId, gridInfo); break;
-                case MachineTypeEnum.Structure: doStructureBuild(resId, gridInfo); break;
+                case MachineTypeEnum.Structure: doStructureBuild(resId, gridInfo, variationIndex); break;
 
                 default:
                     ModUtils.LogEMUError($"Sorry, EMU currently doesn't support building {type}");
@@ -125,7 +125,7 @@ namespace EquinoxsModUtils
                 machineIds = new List<uint>()
             };
             BuilderInfo builderInfo = (BuilderInfo)SaveState.GetResInfoFromId(resID);
-            StreamedHologramData hologram = getHologram(builderInfo, gridInfo, chainData);
+            StreamedHologramData hologram = getHologram(builderInfo, gridInfo, -1, chainData);
 
             ConveyorBuilder builder = (ConveyorBuilder)Player.instance.builder.GetBuilderForType(BuilderInfo.BuilderType.ConveyorBuilder);
             builder.beltBuildInfo = conveyorBuildInfo;
@@ -208,17 +208,18 @@ namespace EquinoxsModUtils
             builder.BuildFromNetworkData(stairsBuildInfo, false);
         }
 
-        private static void doStructureBuild(int resID, GridInfo gridInfo) {
+        private static void doStructureBuild(int resID, GridInfo gridInfo, int variationIndex) {
             SimpleBuildInfo simpleBuildInfo = new SimpleBuildInfo() {
                 machineType = resID,
                 rotation = gridInfo.yawRot,
                 minGridPos = gridInfo.minPos
             };
             BuilderInfo builderInfo = (BuilderInfo)SaveState.GetResInfoFromId(resID);
-            StreamedHologramData hologram = getHologram(builderInfo, gridInfo);
+            StreamedHologramData hologram = getHologram(builderInfo, gridInfo, variationIndex);
 
             StructureBuilder builder = (StructureBuilder)Player.instance.builder.GetBuilderForType(BuilderInfo.BuilderType.StructureBuilder);
             builder.newBuildInfo = simpleBuildInfo;
+            builder.currentVariationIndex = variationIndex;
             builder = (StructureBuilder)setCommonBuilderFields(builder, builderInfo, gridInfo, hologram);
 
             setPlayerBuilderPrivateFields(builder, builderInfo);
@@ -227,7 +228,7 @@ namespace EquinoxsModUtils
 
         // Private Functions
 
-        private static StreamedHologramData getHologram(BuilderInfo builderInfo, GridInfo gridInfo, ConveyorBuildInfo.ChainData? nullableChainData = null) {
+        private static StreamedHologramData getHologram(BuilderInfo builderInfo, GridInfo gridInfo, int variationIndex = -1, ConveyorBuildInfo.ChainData? nullableChainData = null) {
             StreamedHologramData hologram = null;
             Vector3 thisHologramPos = gridInfo.BottomCenter;
             int yawRotation = 0;
@@ -415,6 +416,8 @@ namespace EquinoxsModUtils
                     Debug.Log($"Skipped rendering hologram for unknown type: {type}");
                     break;
             }
+
+            if (variationIndex != -1) hologram.variationNum = variationIndex;
 
             Quaternion rotation = Quaternion.Euler(0, yawRotation, 0);
             hologram.SetTransform(thisHologramPos, rotation);

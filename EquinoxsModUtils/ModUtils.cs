@@ -24,7 +24,7 @@ namespace EquinoxsModUtils
         // Plugin Details
         private const string MyGUID = "com.equinox.EquinoxsModUtils";
         private const string PluginName = "EquinoxsModUtils";
-        private const string VersionString = "1.1.0";
+        private const string VersionString = "2.2.0";
 
         private static readonly Harmony Harmony = new Harmony(MyGUID);
         public static ManualLogSource Log = new ManualLogSource(PluginName);
@@ -306,6 +306,21 @@ namespace EquinoxsModUtils
             return true;
         }
 
+        private static bool areListIntsEqual(List<int> list1, List<int> list2, bool sort) {
+            if(list1.Count != list2.Count) return false;
+
+            if (sort) {
+                list1.Sort();
+                list2.Sort();
+            }
+
+            for(int i = 0; i < list1.Count; i++) {
+                if (list1[i] != list2[i]) return false;
+            }
+
+            return true;
+        }
+
         // Public Functions For Other Devs
 
         #region Resources
@@ -425,6 +440,38 @@ namespace EquinoxsModUtils
 
             LogEMUWarning("Could not find thresher recipe");
             LogEMUWarning("Try using the resource names in EquinoxsModUtils.ResourceNames");
+            return null;
+        }
+
+        /// <summary>
+        /// Tries to find the recipe that matches the ingredients and results provided in the arguments.
+        /// Save the results if calling more than once.
+        /// </summary>
+        /// <param name="ingredientIDs">List of the ResourceInfo.uniqueId's of the ingredients</param>
+        /// <param name="resultIDs">List of the ResourceInfo.uniqueId's of the results</param>
+        /// <param name="shouldLog">Whether EMU Info messages should be logged for this call</param>
+        /// <returns>Matching recipe if successful, null otherwise</returns>
+        public static SchematicsRecipeData TryFindRecipe(List<int> ingredientIDs, List<int> resultIDs, bool shouldLog = false) {
+            if (!hasGameDefinesLoaded) {
+                LogEMUError($"TryFindRecipe() called before GameDefines.instance loaded");
+                LogEMUWarning($"Try using the event ModUtils.GameDefinesLoaded or checking ModUtils.hasGameDefinesLoaded.");
+                return null;
+            }
+
+            if (shouldLog) LogEMUInfo("Attempting to find recipe");
+
+            foreach (SchematicsRecipeData recipe in GameDefines.instance.schematicsRecipeEntries) {
+                List<int> recipeIngredients = recipe.ingTypes.Select(item => item.uniqueId).ToList();
+                List<int> recipeResults = recipe.outputTypes.Select(item => item.uniqueId).ToList();
+
+                if(areListIntsEqual(ingredientIDs, recipeIngredients, true) && 
+                   areListIntsEqual(resultIDs, recipeResults, true)) {
+                    if (shouldLog) LogEMUInfo($"Found recipe");
+                    return recipe;
+                }
+            }
+
+            LogEMUError($"Could not find recipe, please check the resource IDs passed in the arguments.");
             return null;
         }
 
@@ -727,17 +774,18 @@ namespace EquinoxsModUtils
         /// <param name="resId">The resource ID of the type of machine you would like to build.</param>
         /// <param name="gridInfo">A GridInfo instance that contains the minPos and yawRotation of the machine you would like to build.</param>
         /// <param name="shouldLog">Whether EMU Info messages should be logged for this call</param>
+        /// <param name="variationIndex">Optional - The variation to use for structure builds.</param>
         /// <param name="recipe">Optional - The recipe or filter that you would like to the machine to have selected.</param>
         /// <param name="chainData">Optional - The ChainData to use for building a conveyor belt</param>
         /// <param name="reverseConveyor">Optional - The value to use for ConveyorBuildInfo.isReversed</param>
-        public static void BuildMachine(int resId, GridInfo gridInfo, bool shouldLog = false, int recipe = -1, ConveyorBuildInfo.ChainData? chainData = null, bool reverseConveyor = false) {
+        public static void BuildMachine(int resId, GridInfo gridInfo, bool shouldLog = false, int variationIndex = -1, int recipe = -1, ConveyorBuildInfo.ChainData? chainData = null, bool reverseConveyor = false) {
             if (!hasSaveStateLoaded) {
                 LogEMUError("BuildMachine() called before SaveState.instance has loaded");
                 LogEMUWarning("Try using the event ModUtils.SaveStateLoaded or checking with ModUtils.hasSaveStateLoaded");
                 return;
             }
 
-            MachineBuilder.buildMachine(resId, gridInfo, shouldLog, recipe, chainData, reverseConveyor);
+            MachineBuilder.buildMachine(resId, gridInfo, shouldLog, variationIndex, recipe, chainData, reverseConveyor);
         }
 
         /// <summary>
@@ -746,10 +794,11 @@ namespace EquinoxsModUtils
         /// <param name="resourceName">The name of the machine that you would like to build</param>
         /// <param name="gridInfo">A GridInfo instance that contains the minPos and yawRotation of the machine you would like to build.</param>
         /// <param name="shouldLog">Whether EMU Info messages should be logged for this call</param>
+        /// <param name="variationIndex">Optional - The variation to use for structure builds.</param>
         /// <param name="recipe">Optional - The recipe or filter that you would like to the machine to have selected.</param>
         /// <param name="chainData">Optional - The ChainData to use for building a conveyor belt</param>
         /// <param name="reverseConveyor">Optional - The value to use for ConveyorBuildInfo.isReversed</param>
-        public static void BuildMachine(string resourceName, GridInfo gridInfo, bool shouldLog = false, int recipe = -1, ConveyorBuildInfo.ChainData? chainData = null, bool reverseConveyor = false) {
+        public static void BuildMachine(string resourceName, GridInfo gridInfo, bool shouldLog = false, int variationIndex = -1, int recipe = -1, ConveyorBuildInfo.ChainData? chainData = null, bool reverseConveyor = false) {
             if (!hasSaveStateLoaded) {
                 LogEMUError("BuildMachine() called before SaveState.instance has loaded");
                 LogEMUWarning("Try using the event ModUtils.SaveStateLoaded or checking with ModUtils.hasSaveStateLoaded");
@@ -763,7 +812,7 @@ namespace EquinoxsModUtils
                 return;
             }
 
-            MachineBuilder.buildMachine(resID, gridInfo, shouldLog, recipe, chainData, reverseConveyor);
+            MachineBuilder.buildMachine(resID, gridInfo, shouldLog, variationIndex, recipe, chainData, reverseConveyor);
         }
 
         #endregion
