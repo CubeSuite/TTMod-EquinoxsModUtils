@@ -85,6 +85,29 @@ if (recipe != null) {
   recipe.outputQuantities[0] = 2;
 }
 ```
+
+#### TryFindRecipe
+
+```public static SchematicsRecipeData TryFindRecipe(List<int> ingredientIDs, List<int> resultIDs, bool shouldLog = false)```
+
+This function tries to find the recipe that takes the ingredients provided in the argument and produces the results provided in the argument.
+Example use:
+
+```csharp
+ResourceInfo copperIngot = ModUtils.GetResourceInfoByName(ResourceNames.CopperIngot);
+ResourceInfo ironIngot = ModUtils.GetResourceInfoByName(ResourceNames.IronIngot);
+ResourceInfo mechComps = ModUtils.GetResourceInfoByName(ResourceNames.MechanicalComponents);
+
+List<int> ingredients = new List<int>() {
+    copperIngot.uniqueId,
+    ironIngot.uniqueId,
+};
+List<int> results = new List<int>() { mechComps.uniqueId };
+SchematicsRecipeData recipe = ModUtils.TryFindRecipe(ingredients, results);
+recipe.ingQuantities[1] = 2;
+
+```
+
 ### Unlocks (Techs)
 
 #### GetUnlockById
