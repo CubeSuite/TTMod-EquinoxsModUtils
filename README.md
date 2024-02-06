@@ -234,13 +234,13 @@ ModUtils.SetPrivateField("_currentBuilder", Player.instance.builder, builder);
 
 #### BuildMachine
 
-```public static void BuildMachine(int resID, GridInfo gridInfo, bool shouldLog = false, int recipe = -1, ConveyorBuildInfo.ChainData? chainData = null, bool reverseConveyor = false)```
+```public static void BuildMachine(int resID, GridInfo gridInfo, bool shouldLog = false, int variationIndex = -1, int recipe = -1, ConveyorBuildInfo.ChainData? chainData = null, bool reverseConveyor = false)```
 
-```public static void BuildMachine(string resourceName, GridInfo gridInfo, bool shouldLog = false, int recipe = -1, ConveyorBuildInfo.ChainData? chainData = null, bool reverseConveyor = false)```
+```public static void BuildMachine(string resourceName, GridInfo gridInfo, bool shouldLog = false, int variationIndex = -1, int recipe = -1, ConveyorBuildInfo.ChainData? chainData = null, bool reverseConveyor = false)```
 
 These functions are used to build new machines in the correct way to avoid machines being built with invisible static meshes. Note, if you try build an Assembler with a recipe set, it will still be partially invisible.
 For most machines, you only need to provide the first two arguments. For building an Assembler with the recipe set, or a Fitler Inserter with the filter set, provide the ```shouldLog``` and ```recipe``` arguments.
-For building Conveyors, provide all arguments. Use ```-1``` for the ```recipe``` field. I recommend enabling logging while developing your mod and turning it off when you are ready to release.
+For building Conveyors, provide all arguments. Use ```-1``` for the ```variationIndex``` and ```recipe``` fields. I recommend enabling logging while developing your mod and turning it off when you are ready to release.
 
 Example uses:
 
@@ -257,6 +257,21 @@ GridInfo gridInfo = new GridInfo(){
 ModUtils.BuildMachine(ResourceNames.Smelter, gridInfo, shouldLog);
 ```
 
+##### Building A Structure
+```
+bool shouldLog = true;
+Vector3Int position = new Vector3Int(100, 10, 100);
+float yawRotation = 0;
+GridInfo gridInfo = new GridInfo(){
+  minPos = position,
+  yawRot = yawRotation
+};
+
+int variationIndex = structureInstance.GetCommonInfo().variationIndex;
+ 
+ModUtils.BuildMachine(ResourceNames.Smelter, gridInfo, shouldLog, variationIndex);
+```
+
 #### Building A Filter Inserter / Assembler With Recipe
 ```
 bool shouldLog = true;
@@ -270,8 +285,8 @@ GridInfo gridInfo = new GridInfo(){
 int recipe = assemblerInstance.targetRecipe;
 int filter = filterInserterInstance.filterType;
 
-ModUtils.BuildMachine(ResourceNames.Assembler, gridInfo, shouldLog, recipe);
-ModUtils.BuildMachine(ResourceNames.FilterInserter, inserterGridInfo, shouldLog, filter);
+ModUtils.BuildMachine(ResourceNames.Assembler, gridInfo, shouldLog, -1, recipe);
+ModUtils.BuildMachine(ResourceNames.FilterInserter, inserterGridInfo, shouldLog, -1, filter);
 ```
 
 #### Building A Conveyor
@@ -294,7 +309,7 @@ ChainData chainData = new ChainData(){
 
 bool buildInReverse = true;
  
-ModUtils.BuildMachine(ResourceNames.Smelter, gridInfo, shouldLog, -1, chainData, buildInReverse);
+ModUtils.BuildMachine(ResourceNames.Smelter, gridInfo, shouldLog, -1, -1, chainData, buildInReverse);
 ```
 
 ## Events
