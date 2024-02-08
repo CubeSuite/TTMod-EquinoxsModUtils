@@ -24,7 +24,7 @@ namespace EquinoxsModUtils
         // Plugin Details
         private const string MyGUID = "com.equinox.EquinoxsModUtils";
         private const string PluginName = "EquinoxsModUtils";
-        private const string VersionString = "2.2.0";
+        private const string VersionString = "2.3.1";
 
         private static readonly Harmony Harmony = new Harmony(MyGUID);
         public static ManualLogSource Log = new ManualLogSource(PluginName);
@@ -440,6 +440,31 @@ namespace EquinoxsModUtils
 
             LogEMUWarning("Could not find thresher recipe");
             LogEMUWarning("Try using the resource names in EquinoxsModUtils.ResourceNames");
+            return null;
+        }
+
+        /// <summary>
+        /// Tries to find the recipe that matches the ingredient provided in the arguments.
+        /// </summary>
+        /// <param name="ingredientResID">The ResourceInfo.uniqueId of the ingredient</param>
+        /// <param name="shouldLog">Whether EMU Info messages should be logged for this call</param>
+        /// <returns>Match recipe if successful, null otherwise</returns>
+        public static SchematicsRecipeData TryFindThresherRecipe(int ingredientResID, bool shouldLog = false) {
+            if (!hasGameDefinesLoaded) {
+                LogEMUError($"TryFindThresherRecipe() called before GameDefines.instance loaded");
+                LogEMUWarning($"Try using the event ModUtils.GameDefinesLoaded or checking ModUtils.hasGameDefinesLoaded.");
+                return null;
+            }
+
+            if (shouldLog) LogEMUInfo($"Attempting to find thresher recipe with ingredient #{ingredientResID}");
+            foreach (SchematicsRecipeData recipe in GameDefines.instance.schematicsRecipeEntries) {
+                if (recipe.ingTypes[0].uniqueId == ingredientResID) {
+                    if (shouldLog) LogEMUInfo($"Found Thresher recipe for resource #{ingredientResID}");
+                    return recipe;
+                }
+            }
+
+            LogEMUError($"Could not find a recipe for resource #{ingredientResID}, please check this value.");
             return null;
         }
 

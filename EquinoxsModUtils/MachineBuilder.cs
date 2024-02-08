@@ -133,6 +133,7 @@ namespace EquinoxsModUtils
 
             setPlayerBuilderPrivateFields(builder, builderInfo);
             builder.BuildFromNetworkData(conveyorBuildInfo, false);
+            Player.instance.inventory.TryRemoveResources(resID, 1);
 
             if (shouldLog) ModUtils.LogEMUInfo($"Built {builderInfo.displayName} at {gridInfo.minPos} with yawRotation {gridInfo.yawRot}");
         }
@@ -152,6 +153,7 @@ namespace EquinoxsModUtils
 
             setPlayerBuilderPrivateFields(builder, builderInfo);
             builder.BuildFromNetworkData(simpleBuildInfo, false);
+            Player.instance.inventory.TryRemoveResources(resID, 1);
         }
 
         private static void doFloorBuild(int resID, GridInfo gridInfo) {
@@ -170,6 +172,7 @@ namespace EquinoxsModUtils
 
             setPlayerBuilderPrivateFields(builder, builderInfo);
             builder.BuildFromNetworkData(floorBuildInfo, false);
+            Player.instance.inventory.TryRemoveResources(resID, 1);
         }
 
         private static void doResearchCoreBuild(int resID, GridInfo gridInfo) {
@@ -188,6 +191,7 @@ namespace EquinoxsModUtils
 
             setPlayerBuilderPrivateFields(builder, builderInfo);
             builder.BuildFromNetworkData(researchCoreBuildInfo, false);
+            Player.instance.inventory.TryRemoveResources(resID, 1);
         }
 
         private static void doStairsBuild(int resID, GridInfo gridInfo) {
@@ -206,6 +210,7 @@ namespace EquinoxsModUtils
 
             setPlayerBuilderPrivateFields(builder, builderInfo);
             builder.BuildFromNetworkData(stairsBuildInfo, false);
+            Player.instance.inventory.TryRemoveResources(resID, 1);
         }
 
         private static void doStructureBuild(int resID, GridInfo gridInfo, int variationIndex) {
