@@ -65,6 +65,7 @@ namespace EquinoxsModUtils.Patches
         static bool isUnlockStateUnique(TechTreeState.UnlockState state, out int index) { 
             for(int i = 0; i < ModUtils.unlockStatesToAdd.Count; i++) {
                 TechTreeState.UnlockState stateToAdd = ModUtils.unlockStatesToAdd[i];
+                if (stateToAdd.unlockRef == null || state.unlockRef == null) continue;
                 if (stateToAdd.unlockRef.displayNameHash == state.unlockRef.displayNameHash) {
                     index = i;
                     return false;

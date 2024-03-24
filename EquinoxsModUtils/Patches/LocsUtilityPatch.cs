@@ -12,6 +12,8 @@ namespace EquinoxsModUtils.Patches
         [HarmonyPatch(typeof(LocsUtility), "TranslateStringFromHash")]
         [HarmonyPrefix]
         private static bool GetModdedTranslation(string hash, ref string __result, string original = null) {
+            if (string.IsNullOrEmpty(hash)) return true;
+
             if (ModUtils.hashTranslations.ContainsKey(hash)) {
                 __result = ModUtils.hashTranslations[hash];
                 return false;

@@ -192,15 +192,14 @@ namespace EquinoxsModUtils
             LogEMUInfo("Cleaning Unlock States");
             for (int i = 0; i < TechTreeState.instance.unlockStates.Count();) {
                 TechTreeState.UnlockState state = TechTreeState.instance.unlockStates[i];
-                if (state.unlockRef == null) continue;
-                if (!GameDefines.instance.unlocks.Contains(state.unlockRef)) {
-                    TechTreeState.instance.unlockStates.RemoveAt(i);
-                    GameState.instance.acknowledgedUnlocks.Remove(state.unlockRef.uniqueId);
-                    LogEMUInfo($"Could not find Unlock for UnlockState #{i}. Removed.");
+                if (state.unlockRef == null || GameDefines.instance.unlocks.Contains(state.unlockRef)) {
+                    i++;
+                    continue;
                 }
-                else {
-                    ++i;
-                }
+
+                TechTreeState.instance.unlockStates.RemoveAt(i);
+                GameState.instance.acknowledgedUnlocks.Remove(state.unlockRef.uniqueId);
+                LogEMUInfo($"Could not find Unlock for UnlockState #{i}. Removed.");
             }
 
             LogEMUInfo($"Clearing duplicate unlock states");
@@ -208,6 +207,7 @@ namespace EquinoxsModUtils
             for(int i = 0; i < TechTreeState.instance.unlockStates.Count(); i++) {
                 bool isUnique = true;
                 foreach(TechTreeState.UnlockState state in uniqueStates) {
+                    if (TechTreeState.instance.unlockStates[i].unlockRef == null || state.unlockRef == null) continue;
                     if (TechTreeState.instance.unlockStates[i].unlockRef.uniqueId == state.unlockRef.uniqueId) {
                         isUnique = false;
                         break;
