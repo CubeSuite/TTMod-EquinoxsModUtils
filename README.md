@@ -65,7 +65,12 @@ if (info != null) {
 ```
 #### GetResourceIDByName
 
-```public static int GetResourceIDByName(string name, bool shouldLog = false)```
+```csharp
+public static int GetResourceIDByName(
+  string name,
+  bool shouldLog = false
+)
+```
 
 This function finds the unique resource ID for the given resource name. Returns ```null``` if not found.
 Example use:
@@ -80,7 +85,13 @@ if (limestoneID != -1) {
 
 #### FindThresherRecipeFromOutputs
 
-```public static SchematicsRecipeData FindThresherRecipeFromOutputs(string output1Name, string output2Name, bool shouldLog = false)```
+```csharp
+public static SchematicsRecipeData FindThresherRecipeFromOutputs(
+  string output1Name,
+  string output2Name,
+  bool shouldLog = false
+)
+```
 
 This function finds a thresher recipe based on its two outputs. This does not work for recipes with one output. Returns ```null``` if not found.
 Example use:
@@ -94,7 +105,13 @@ if (recipe != null) {
 
 #### TryFindRecipe
 
-```public static SchematicsRecipeData TryFindRecipe(List<int> ingredientIDs, List<int> resultIDs, bool shouldLog = false)```
+```csharp
+public static SchematicsRecipeData TryFindRecipe(
+  List<int> ingredientIDs,
+  List<int> resultIDs,
+  bool shouldLog = false
+)
+```
 
 This function tries to find the recipe that takes the ingredients provided in the argument and produces the results provided in the argument.
 Example use:
@@ -118,12 +135,17 @@ recipe.ingQuantities[1] = 2;
 
 #### GetUnlockById
 
-```public static Unlock GetUnlockByID(int id, bool shouldLog = false)```
+```csharp
+public static Unlock GetUnlockByID(
+  int id,
+  bool shouldLog = false
+)
+```
 
 This function finds the ```Unlock``` with the id given in the argument. Returns ```null``` if not found.
 Example use:
 
-```
+```csharp
 Unlock firstUnlock = ModUtils.GetUnlockByID(0);
 if (firstUnlock != null){
   Debug.Log($"First Unlock: {firstUnlock.displayName}");
@@ -132,7 +154,12 @@ if (firstUnlock != null){
 
 #### GetUnlockByName
 
-```public static Unlock GetUnlockByName(string name, bool shouldLog = false)```
+```csharp
+public static Unlock GetUnlockByName(
+  string name,
+  bool shouldLog = false
+)
+```
 
 This function finds the ```Unlock``` that matches the name given in the argument. Returns ```null``` if not found.
 Example use:
@@ -145,14 +172,25 @@ if (stackInserterUnlock != null) {
 ```
 #### AddNewUnlock
 
-```public static void AddNewUnlock(NewUnlockDetails details, bool shouldLog = false)```
+```csharp
+public static void AddNewUnlock(
+  NewUnlockDetails details,
+  bool shouldLog = false
+)
+```
 
 This function takes basic information about a new ```Unlock``` and registers it to be added at the correct times during the load cycle. Handles all the heavy lifting for you.
 See the end section of this readme for a guide on adding new Unlocks.
 
 #### UpdateUnlockSprite
 
-```public static void UpdateUnlockSprite(int unlockID, Sprite sprite, bool shouldLog = false)```
+```csharp
+public static void UpdateUnlockSprite(
+  int unlockID,
+  Sprite sprite,
+  bool shouldLog = false
+)
+```
 
 This function is used to change the sprite of an unlock. Useful for if you want your new Unlock to use the same sprite as a vanilla Unlock.
 Example use:
@@ -166,7 +204,13 @@ if (conveyor2Unlock != null) {
 }
 ```
 
-```public static void UpdateUnlockSprite(string displayName, Sprite sprite, bool shouldLog = false)```
+```csharp
+public static void UpdateUnlockSprite(
+  string displayName,
+  Sprite sprite,
+  bool shouldLog = false
+)
+```
 
 This function does the same as above, but takes the ```displayName``` of the Unlock to find the Unlock to update.
 Exmaple use:
@@ -180,7 +224,13 @@ if (conveyor2Unlock != null) {
 
 #### UpdateUnlockTreePosition
 
-```public static void UpdateUnlockTreePosition(int unlockID, int treePosition, bool shouldLog = false)```
+```csharp
+public static void UpdateUnlockTreePosition(
+  int unlockID,
+  int treePosition,
+  bool shouldLog = false
+)
+```
 
 This function updates the horizontal position of the Unlock on the Tech Tree. Useful for aligning new Unlocks with vanilla ones.
 Example use:
@@ -194,7 +244,13 @@ if (conveyor2Unlock != null) {
 }
 ```
 
-```public static void UpdateUnlockTreePosition(string displayName, int treePosition, bool shouldLog = false)```
+```csharp
+public static void UpdateUnlockTreePosition(
+  string displayName,
+  int treePosition,
+  bool shouldLog = false
+)
+```
 
 This function does the same as above, but takes the ```displayName``` of the Unlock to find the Unlock to update.
 Example use:
@@ -210,13 +266,18 @@ if (conveyor2Unlock != null) {
 
 #### GetPrivateField
 
-```public static object GetPrivateField<T>(string name, T instance)```
+```csharp
+public static object GetPrivateField<T>(
+  string name,
+  T instance
+)
+```
 
 This function retrieves the value of a private field of a non-static class ```T``` from the instance of that class given in the arguments. Note that you do not need to include the ```<T>``` after the function name, this is provided by the ```T``` argument.
 Returns null if the field cannot be found (and logs an error), can also return null if the value of the field is null for the given instance.
 Example use:
 
-```
+```csharp
 object _currentBuilderValue = ModUtils.GetPrivateField("_currentBuilder", Player.instance.builder);
 if (object != null){
   PlayerBuilder builder = (PlayerBuilder)_currentBuilderValue;
@@ -225,20 +286,32 @@ if (object != null){
 
 #### SetPrivateField
 
-```public static void SetPrivateField<T>(string name, T instance, object value)```
+```csharp
+public static void SetPrivateField<T>(
+  string name,
+  T instance,
+  object value
+)
+```
 
 This function sets the value of a private field of a non-static class ```T``` of the instance of that class given in the arguments. Note that you do not need to include the ```<T>``` after the function name, this is provided by the ```T``` argument.
 Logs an error if the field cannot be found.
 Example use:
 
-```
+```csharp
 ProceduralBuilder builder = Player.instance.GetBuilderForType(...);
 ModUtils.SetPrivateField("_currentBuilder", Player.instance.builder, builder);
 ```
 
 #### NullCheck
 
-```public static bool NullCheck(object obj, string name, bool shouldLog = false)```
+```csharp
+public static bool NullCheck(
+  object obj,
+  string name,
+  bool shouldLog = false
+)
+```
 
 This function can be used to check if the provided object is null and log the result. It's a little cleaner to use this than multiple manual null checks if there's more than one to do in a function.
 Returns ```true``` if ```obj``` is *not* null. Think of this function as a test, see example use for a better explanation.
@@ -247,7 +320,7 @@ Note: If ```obj``` is null, a warning level messaeg will always be logged, regar
 
 Example use:
 
-```
+```csharp
 if(NullCheck(UIManager.instance, "UI Manager"){
   if(NullCheck(UIManager.instance.techTreeMenu, "Tech Tree Menu")){
     TechTreeNode node = UIManager.instance.techTreeMenu.GridUI.GetNodeByUnlock(...);
@@ -255,7 +328,7 @@ if(NullCheck(UIManager.instance, "UI Manager"){
 }
 ```
 This could also be written using guard clauses:
-```
+```csharp
 if(!NullCheck(UIManager.instance, "UI Manager")) return;
 if(!NullCheck(UIManager.instance.techTreeMenu, "Tech Tree Menu")) return;
 TechTreeNode node = UIManager.instance.techTreeMenu.GridUI.GetNodeByUnlock(...);
@@ -266,9 +339,29 @@ Read those first two lines as 'If the null check fails, return'
 
 #### BuildMachine
 
-```public static void BuildMachine(int resID, GridInfo gridInfo, bool shouldLog = false, int variationIndex = -1, int recipe = -1, ConveyorBuildInfo.ChainData? chainData = null, bool reverseConveyor = false)```
+```csharp
+public static void BuildMachine(
+  int resID,
+  GridInfo gridInfo,
+  bool shouldLog = false,
+  int variationIndex = -1,
+  int recipe = -1,
+  ConveyorBuildInfo.ChainData? chainData = null,
+  bool reverseConveyor = false
+)
+```
 
-```public static void BuildMachine(string resourceName, GridInfo gridInfo, bool shouldLog = false, int variationIndex = -1, int recipe = -1, ConveyorBuildInfo.ChainData? chainData = null, bool reverseConveyor = false)```
+```csharp
+public static void BuildMachine(
+  string resourceName,
+  GridInfo gridInfo,
+  bool shouldLog = false,
+  int variationIndex = -1,
+  int recipe = -1,
+  ConveyorBuildInfo.ChainData? chainData = null,
+  bool reverseConveyor = false
+)
+```
 
 These functions are used to build new machines in the correct way to avoid machines being built with invisible static meshes. Note, if you try build an Assembler with a recipe set, it will still be partially invisible.
 For most machines, you only need to provide the first two arguments. For building an Assembler with the recipe set, or a Fitler Inserter with the filter set, provide the ```shouldLog``` and ```recipe``` arguments.
@@ -277,7 +370,7 @@ For building Conveyors, provide all arguments. Use ```-1``` for the ```variation
 Example uses:
 
 ##### Building A Simple Machine
-```
+```csharp
 bool shouldLog = true;
 Vector3Int position = new Vector3Int(100, 10, 100);
 float yawRotation = 0;
@@ -290,7 +383,7 @@ ModUtils.BuildMachine(ResourceNames.Smelter, gridInfo, shouldLog);
 ```
 
 ##### Building A Structure
-```
+```csharp
 bool shouldLog = true;
 Vector3Int position = new Vector3Int(100, 10, 100);
 float yawRotation = 0;
@@ -305,7 +398,7 @@ ModUtils.BuildMachine(ResourceNames.Smelter, gridInfo, shouldLog, variationIndex
 ```
 
 #### Building A Filter Inserter / Assembler With Recipe
-```
+```csharp
 bool shouldLog = true;
 Vector3Int position = new Vector3Int(100, 10, 100);
 float yawRotation = 0;
@@ -323,7 +416,7 @@ ModUtils.BuildMachine(ResourceNames.FilterInserter, inserterGridInfo, shouldLog,
 
 #### Building A Conveyor
 
-```
+```csharp
 bool shouldLog = true;
 Vector3Int position = new Vector3Int(100, 10, 100);
 float yawRotation = 0;
@@ -336,7 +429,10 @@ ChainData chainData = new ChainData(){
   count = 1,
   shape = beltShape,
   rotation = yawRotation,
-  start = position
+  start = position,
+  height = height,
+  topYawRot = topYawRot,
+  inputBottom = inputBottom
 };
 
 bool buildInReverse = true;
@@ -369,7 +465,9 @@ private void OnGameStateLoaded(object sender, EventArgs e) {
 
 ### GameDefinesLoaded
 
-```public static event EventHandler GameDefinesLoaded;```
+```csharp
+public static event EventHandler GameDefinesLoaded;
+```
 
 This event is fired when ```GameDefines.instance``` is no longer null. Use this event to run code that needs to access ```GameDefines.instace``` at the correct time.
 Example use:
