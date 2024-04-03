@@ -324,7 +324,7 @@ Example use:
 if(NullCheck(UIManager.instance, "UI Manager"){
   if(NullCheck(UIManager.instance.techTreeMenu, "Tech Tree Menu")){
     TechTreeNode node = UIManager.instance.techTreeMenu.GridUI.GetNodeByUnlock(...);
-}
+  }
 }
 ```
 This could also be written using guard clauses:
@@ -444,7 +444,9 @@ ModUtils.BuildMachine(ResourceNames.Smelter, gridInfo, shouldLog, -1, -1, chainD
 
 ### GameStateLoaded
 
-```public static event EventHandler GameStateLoaded;```
+```csharp
+public static event EventHandler GameStateLoaded;
+```
 
 This event is fired when ```GameState.instance``` is no longer null. Use this event to run code that needs to access ```GameState.instance``` at the correct time.
 Example use:
@@ -489,7 +491,9 @@ private void OnGameDefinesLoaded(object sender, EventArgs e) {
 
 ### SaveStateLoaded
 
-```public static event EventHandler SaveStateLoaded;```
+```csharp
+public static event EventHandler SaveStateLoaded;
+```
 
 This event is fired when ```SaveState.instance``` is no longer null. Use this event to run code that needs to access ```SaveState.instance``` at the correct time.
 Example use:
@@ -509,7 +513,9 @@ private void OnSaveStateLoaded(object sender, EventArgs e) {
 
 ### TechTreeStateLoaded
 
-```public static event EventHandler TechTreeStateLoaded;```
+```csharp
+public static event EventHandler TechTreeStateLoaded;
+```
 
 This event is fired when ```TechTreeState.instance``` is no longer null. Use this event to run code that needs to access ```TechTreeState.instance``` at the correct time.
 Example use:
