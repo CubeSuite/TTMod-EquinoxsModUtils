@@ -47,7 +47,12 @@ A collection of utilities for modding the game Techtonica that make it easier to
 
 #### GetResourceInfoByName
 
-```public static ResourceInfo GetResourceInfoByName(string name, bool shouldLog = false)```
+```csharp
+public static ResourceInfo GetResourceInfoByName(
+  string name,
+  bool shouldLog = false
+)
+```
 
 This function allows you to find the ```ResourceInfo``` of any resource by using its display name. Returns ```null``` if not found.
 Example use:
