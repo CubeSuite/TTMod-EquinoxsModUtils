@@ -200,7 +200,7 @@ if (conveyor2Unlock != null) {
 }
 ```
 
-### Private Fields
+### Reflection And Misc
 
 #### GetPrivateField
 
@@ -229,6 +229,32 @@ Example use:
 ProceduralBuilder builder = Player.instance.GetBuilderForType(...);
 ModUtils.SetPrivateField("_currentBuilder", Player.instance.builder, builder);
 ```
+
+#### NullCheck
+
+```public static bool NullCheck(object obj, string name, bool shouldLog = false)```
+
+This function can be used to check if the provided object is null and log the result. It's a little cleaner to use this than multiple manual null checks if there's more than one to do in a function.
+Returns ```true``` if ```obj``` is *not* null. Think of this function as a test, see example use for a better explanation.
+
+Note: If ```obj``` is null, a warning level messaeg will always be logged, regardless of ```shouldLog```.
+
+Example use:
+
+```
+if(NullCheck(UIManager.instance, "UI Manager"){
+  if(NullCheck(UIManager.instance.techTreeMenu, "Tech Tree Menu")){
+    TechTreeNode node = UIManager.instance.techTreeMenu.GridUI.GetNodeByUnlock(...);
+}
+}
+```
+This could also be written using guard clauses:
+```
+if(!NullCheck(UIManager.instance, "UI Manager")) return;
+if(!NullCheck(UIManager.instance.techTreeMenu, "Tech Tree Menu")) return;
+TechTreeNode node = UIManager.instance.techTreeMenu.GridUI.GetNodeByUnlock(...);
+```
+Read those first two lines as 'If the null check fails, return'
 
 ### Machine Building
 
