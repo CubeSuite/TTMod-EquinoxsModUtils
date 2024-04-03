@@ -24,7 +24,7 @@ namespace EquinoxsModUtils
         // Plugin Details
         private const string MyGUID = "com.equinox.EquinoxsModUtils";
         private const string PluginName = "EquinoxsModUtils";
-        private const string VersionString = "2.3.1";
+        private const string VersionString = "3.0.0";
 
         private static readonly Harmony Harmony = new Harmony(MyGUID);
         public static ManualLogSource Log = new ManualLogSource(PluginName);
@@ -51,6 +51,13 @@ namespace EquinoxsModUtils
         public static event EventHandler SaveStateLoaded;
         public static event EventHandler TechTreeStateLoaded;
 
+        // Testing
+        // ToDo: Disable before release
+
+        private static bool doUnlockTest = false;
+        private static bool printResources = false;
+        private static bool printUnlocks = false;
+
         private void Awake() {
             Logger.LogInfo($"PluginName: {PluginName}, VersionString: {VersionString} is loading...");
             Harmony.PatchAll();
@@ -59,21 +66,23 @@ namespace EquinoxsModUtils
             Harmony.CreateAndPatchAll(typeof(LocsUtilityPatch));
             Harmony.CreateAndPatchAll(typeof(TechTreeStatePatch));
             Harmony.CreateAndPatchAll(typeof(SaveStatePatch));
+            Harmony.CreateAndPatchAll(typeof(TechActivatedSystemMessagePatch));
 
             Logger.LogInfo($"PluginName: {PluginName}, VersionString: {VersionString} is loaded.");
             Log = Logger;
 
-            // ToDo: Comment before release
-            //AddNewUnlock(new NewUnlockDetails() {
-            //    category = Unlock.TechCategory.Synthesis,
-            //    coreTypeNeeded = ResearchCoreDefinition.CoreType.Red,
-            //    coreCountNeeded = 1,
-            //    description = "Test Unlock Description",
-            //    displayName = "Test Unlock",
-            //    numScansNeeded = 0,
-            //    requiredTier = TechTreeState.ResearchTier.Tier1,
-            //    treePosition = 50
-            //});
+            if (doUnlockTest) {
+                AddNewUnlock(new NewUnlockDetails() {
+                    category = Unlock.TechCategory.Synthesis,
+                    coreTypeNeeded = ResearchCoreDefinition.CoreType.Red,
+                    coreCountNeeded = 1,
+                    description = "Test Unlock Description",
+                    displayName = "Test Unlock",
+                    numScansNeeded = 0,
+                    requiredTier = TechTreeState.ResearchTier.Tier1,
+                    treePosition = 50
+                });
+            }
         }
 
         private void Update() {
@@ -145,9 +154,16 @@ namespace EquinoxsModUtils
                 GameDefinesLoaded?.Invoke(GameDefines.instance, EventArgs.Empty);
                 LogEMUInfo("GameDefines.instace loaded");
 
-                // ToDo: Comment before release
-                //PrintAllResourceNames();
-                //PrintAllUnlockNames();
+                foreach(Unlock unlock in GameDefines.instance.unlocks) {
+                    if(unlock.requiredTier == TechTreeState.ResearchTier.NONE) {
+                        string name = LocsUtility.TranslateStringFromHash(unlock.displayNameHash);
+                        LogEMUWarning($"Unlock '{name}' has required Tier NONE, setting to Tier0");
+                        unlock.requiredTier = TechTreeState.ResearchTier.Tier0;
+                    }
+                }
+
+                if (printResources) PrintAllResourceNames();
+                if (printUnlocks) PrintAllUnlockNames();
             }
         }
 
@@ -180,6 +196,8 @@ namespace EquinoxsModUtils
             LogEMUInfo($"Adding {unlocksToAdd.Count} new Unlocks");
             for (int i = 0; i < unlocksToAdd.Count; i++) {
                 Unlock unlock = unlocksToAdd[i];
+                if(!NullCheck(unlock, "Unlock")) continue;
+
                 if (FindDependencies(ref unlock)) {
                     unlock.uniqueId = GetNewUnlockUniqueID();
                     GameDefines.instance.unlocks.Add(unlock);
@@ -842,7 +860,7 @@ namespace EquinoxsModUtils
 
         #endregion
 
-        #region Reflection
+        #region Reflection And Misc
 
         /// <summary>
         /// Get the value of a private field from an instance of a non-static class.
@@ -876,6 +894,17 @@ namespace EquinoxsModUtils
             }
 
             field.SetValue(instance, value);
+        }
+
+        public static bool NullCheck(object obj, string name, bool shouldLog = false) {
+            if (obj == null) {
+                LogEMUWarning($"{name} is null");
+                return false;
+            }
+            else {
+                if(shouldLog) LogEMUInfo($"{name} is not null");
+                return true;
+            }
         }
 
         #endregion

@@ -16,14 +16,15 @@ namespace EquinoxsModUtils
         public const string FilterInserter = "Filter Inserter";
         public const string FastInserter = "Fast Inserter";
         public const string StackInserter = "Stack Inserter";
+        public const string StackFilterInserter = "Stack Filter Inserter";
         public const string Container = "Container";
         public const string MonorailDepot = "Monorail Depot";
         public const string MonorailPole = "Monorail Pole";
         public const string MonorailTrack = "Monorail Track";
         public const string MiningDrill = "Mining Drill";
         public const string BlastDrill = "Blast Drill";
-        public const string MiningDrillMKII = "Mining Drill MKII";
         public const string MiningCharge = "Mining Charge";
+        public const string MiningDrillMKII = "Mining Drill MKII";
         public const string Smelter = "Smelter";
         public const string SmelterMKII = "Smelter MKII";
         public const string BlastSmelter = "Blast Smelter";
@@ -103,8 +104,14 @@ namespace EquinoxsModUtils
         public const string SmallFloorPot = "Small Floor Pot";
         public const string WallPot = "Wall Pot";
         public const string MediumFloorPot = "Medium Floor Pot";
+        public const string CeilingPlant1x1 = "Ceiling Plant (1x1)";
+        public const string CeilingPlant3x3 = "Ceiling Plant (3x3)";
+        public const string WallPlant1x1 = "Wall Plant (1x1)";
+        public const string WallPlant3x3 = "Wall Plant (3x3)";
+        public const string SectionalCorner2x2 = "Sectional Corner (2x2)";
         public const string Biobrick = "Biobrick";
         public const string KindlevineStems = "Kindlevine Stems";
+        public const string KindlevineStemsWashed = "Kindlevine Stems (Washed)";
         public const string Plantmatter = "Plantmatter";
         public const string KindlevineSeed = "Kindlevine Seed";
         public const string ShiverthornSeed = "Shiverthorn Seed";
@@ -112,6 +119,7 @@ namespace EquinoxsModUtils
         public const string Shiverthorn = "Shiverthorn";
         public const string ShiverthornBuds = "Shiverthorn Buds";
         public const string KindlevineExtract = "Kindlevine Extract";
+        public const string ShiverthornBudsNeutralized = "Shiverthorn Buds (Neutralized)";
         public const string ShiverthornExtract = "Shiverthorn Extract";
         public const string CarbonPowder = "Carbon Powder";
         public const string Quicklime = "Quicklime";
@@ -188,6 +196,7 @@ namespace EquinoxsModUtils
         public const string TheMOLE = "The M.O.L.E.";
         public const string HoverPack = "Hover Pack";
         public const string Railrunner = "Railrunner";
+        public const string Replacer = "Replacer";
         public const string SonarTower = "Sonar Tower";
         public const string Echosketch = "Echosketch";
         public const string AtlantumPickaxe = "Atlantum Pickaxe";

@@ -71,32 +71,27 @@ namespace EquinoxsModUtils
             builder = (MachineInstanceDefaultBuilder)setCommonBuilderFields(builder, builderInfo, gridInfo, hologram);
 
             setPlayerBuilderPrivateFields(builder, builderInfo);
-            doBuild(builder, builderInfo);
+            doBuild(builder, builderInfo, -1);
 
             if (shouldLog) ModUtils.LogEMUInfo($"Built {builderInfo.displayName} at ({gridInfo.minPos}) with yawRotation {gridInfo.yawRot}");
         }
 
         private static void doSimpleBuildWithRecipe(int resID, GridInfo gridInfo, int recipe, bool shouldLog) {
-            BuildWithRecipeInfo buildWithRecipeInfo = new BuildWithRecipeInfo() {
+            SimpleBuildInfo info = new SimpleBuildInfo() {
                 machineType = resID,
                 rotation = gridInfo.yawRot,
                 minGridPos = gridInfo.minPos,
-                recipe = recipe
+                recipeId = recipe
             };
             BuilderInfo builderInfo = (BuilderInfo)SaveState.GetResInfoFromId(resID);
 
             StreamedHologramData hologram = getHologram(builderInfo, gridInfo);
             MachineInstanceDefaultBuilder builder = (MachineInstanceDefaultBuilder)Player.instance.builder.GetBuilderForType(BuilderInfo.BuilderType.MachineInstanceDefaultBuilder);
-            builder.newBuildInfo = buildWithRecipeInfo;
+            builder.newBuildInfo = info;
             builder = (MachineInstanceDefaultBuilder)setCommonBuilderFields(builder, builderInfo, gridInfo, hologram);
             
             setPlayerBuilderPrivateFields(builder, builderInfo);
-            BuildWithRecipeAction action = new BuildWithRecipeAction() {
-                info = buildWithRecipeInfo,
-                resourceCostID = resID,
-                resourceCostAmount = 1
-            };
-            NetworkMessageRelay.instance.SendNetworkAction(action);
+            doBuild(builder, builderInfo, recipe);
 
             if (shouldLog) ModUtils.LogEMUInfo($"Built {builderInfo.displayName} with recipe {recipe} at {gridInfo.minPos} with yawRotation {gridInfo.yawRot}");
         }
@@ -116,13 +111,15 @@ namespace EquinoxsModUtils
                 ModUtils.LogEMUInfo($"chainData.rotation: {chainData.rotation}");
                 ModUtils.LogEMUInfo($"chainData.shape: {chainData.shape}");
                 ModUtils.LogEMUInfo($"chainData.start: {chainData.start}");
+                ModUtils.LogEMUInfo($"chainData.height: {chainData.height}");
             }
 
             ConveyorBuildInfo conveyorBuildInfo = new ConveyorBuildInfo() {
                 machineType = resID,
                 chainData = new List<ConveyorBuildInfo.ChainData>() { chainData },
                 isReversed = reverseConveyor,
-                machineIds = new List<uint>()
+                machineIds = new List<uint>(),
+                autoHubsEnabled = false
             };
             BuilderInfo builderInfo = (BuilderInfo)SaveState.GetResInfoFromId(resID);
             StreamedHologramData hologram = getHologram(builderInfo, gridInfo, -1, chainData);
@@ -132,6 +129,7 @@ namespace EquinoxsModUtils
             builder = (ConveyorBuilder)setCommonBuilderFields(builder, builderInfo, gridInfo, hologram);
 
             setPlayerBuilderPrivateFields(builder, builderInfo);
+
             builder.BuildFromNetworkData(conveyorBuildInfo, false);
             Player.instance.inventory.TryRemoveResources(resID, 1);
 
@@ -228,7 +226,7 @@ namespace EquinoxsModUtils
             builder = (StructureBuilder)setCommonBuilderFields(builder, builderInfo, gridInfo, hologram);
 
             setPlayerBuilderPrivateFields(builder, builderInfo);
-            doBuild(builder, builderInfo);
+            doBuild(builder, builderInfo, -1);
         }
 
         // Private Functions
@@ -445,8 +443,9 @@ namespace EquinoxsModUtils
             ModUtils.SetPrivateField("_lastBuildPos", Player.instance.builder, builder.curGridPlacement.MinInt);
         }
 
-        private static void doBuild(ProceduralBuilder builder, BuilderInfo builderInfo) {
+        private static void doBuild(ProceduralBuilder builder, BuilderInfo builderInfo, int recipeID) {
             BuildMachineAction action = builder.GenerateNetworkData();
+            action.recipeId = recipeID;
             action.resourceCostID = builderInfo.uniqueId;
             action.resourceCostAmount = 1;
             NetworkMessageRelay.instance.SendNetworkAction(action);
