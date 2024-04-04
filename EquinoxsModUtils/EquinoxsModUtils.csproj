@@ -72,6 +72,7 @@
     <Compile Include="Patches\LocsUtilityPatch.cs" />
     <Compile Include="ModUtils.cs" />
     <Compile Include="Patches\SaveStatePatch.cs" />
+    <Compile Include="Patches\SteamLobbyConnectorPatch.cs" />
     <Compile Include="Patches\TechActivatedSystemMessagePatch.cs" />
     <Compile Include="Patches\TechTreeStatePatch.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

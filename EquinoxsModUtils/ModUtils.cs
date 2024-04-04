@@ -24,7 +24,7 @@ namespace EquinoxsModUtils
         // Plugin Details
         private const string MyGUID = "com.equinox.EquinoxsModUtils";
         private const string PluginName = "EquinoxsModUtils";
-        private const string VersionString = "3.0.0";
+        private const string VersionString = "3.1.0";
 
         private static readonly Harmony Harmony = new Harmony(MyGUID);
         public static ManualLogSource Log = new ManualLogSource(PluginName);
@@ -34,6 +34,8 @@ namespace EquinoxsModUtils
         public static bool hasGameDefinesLoaded = false;
         public static bool hasSaveStateLoaded = false;
         public static bool hasTechTreeStateLoaded = false;
+        public static bool hasGameLoaded = false;
+        private static bool loadingUIObserved = false;
 
         private static List<Unlock> unlocksToAdd = new List<Unlock>();
         private static Dictionary<string, List<string>> unlockDependencies = new Dictionary<string, List<string>>();
@@ -50,6 +52,7 @@ namespace EquinoxsModUtils
         public static event EventHandler GameDefinesLoaded;
         public static event EventHandler SaveStateLoaded;
         public static event EventHandler TechTreeStateLoaded;
+        public static event EventHandler GameLoaded;
 
         // Testing
         // ToDo: Disable before release
@@ -67,6 +70,7 @@ namespace EquinoxsModUtils
             Harmony.CreateAndPatchAll(typeof(TechTreeStatePatch));
             Harmony.CreateAndPatchAll(typeof(SaveStatePatch));
             Harmony.CreateAndPatchAll(typeof(TechActivatedSystemMessagePatch));
+            Harmony.CreateAndPatchAll(typeof(SteamLobbyConnectorPatch));
 
             Logger.LogInfo($"PluginName: {PluginName}, VersionString: {VersionString} is loaded.");
             Log = Logger;
@@ -90,6 +94,7 @@ namespace EquinoxsModUtils
             if (!hasGameDefinesLoaded) CheckIfGameDefinesLoaded();
             if (!hasSaveStateLoaded) CheckIfSaveStateLoaded();
             if (!hasTechTreeStateLoaded) CheckIfTechTreeStateLoaded();
+            if (!hasGameLoaded) CheckIfGameLoaded();
         }
 
         private static void CheckBepInExConfig() {
@@ -181,12 +186,25 @@ namespace EquinoxsModUtils
             if (TechTreeState.instance != null) {
                 hasTechTreeStateLoaded = true;
 
-                // ToDo: Comment before release
-                //Unlock unlock = GetUnlockByName(UnlockNames.ConveyorBeltMKII);
-                //UpdateUnlockSprite("Test Unlock", unlock.sprite, true);
-
                 TechTreeStateLoaded?.Invoke(TechTreeState.instance, EventArgs.Empty);
                 LogEMUInfo("TechTreeState.instance loaded");
+            }
+        }
+
+        private static void CheckIfGameLoaded() {
+            if(LoadingUI.instance == null && !loadingUIObserved) {
+                return;
+            }
+
+            else if (LoadingUI.instance != null && !loadingUIObserved) {
+                loadingUIObserved = true; 
+                return;
+            }
+
+            else if(LoadingUI.instance == null && loadingUIObserved) {
+                hasGameLoaded = true;
+                GameLoaded?.Invoke(null, EventArgs.Empty);
+                LogEMUInfo("Game Loaded");
             }
         }
 
@@ -896,6 +914,13 @@ namespace EquinoxsModUtils
             field.SetValue(instance, value);
         }
 
+        /// <summary>
+        /// Checks if the provided object is null and logs if it is null
+        /// </summary>
+        /// <param name="obj">The object to be checked</param>
+        /// <param name="name">The name of the object to add to the log lnie</param>
+        /// <param name="shouldLog">Whether an info messaeg should be logged if the object is not null</param>
+        /// <returns>true if not null</returns>
         public static bool NullCheck(object obj, string name, bool shouldLog = false) {
             if (obj == null) {
                 LogEMUWarning($"{name} is null");
