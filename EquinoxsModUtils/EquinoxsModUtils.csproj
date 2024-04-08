@@ -74,7 +74,9 @@
     <Compile Include="Patches\SaveStatePatch.cs" />
     <Compile Include="Patches\SteamLobbyConnectorPatch.cs" />
     <Compile Include="Patches\TechActivatedSystemMessagePatch.cs" />
+    <Compile Include="Patches\TechTreeGridPatch.cs" />
     <Compile Include="Patches\TechTreeStatePatch.cs" />
+    <Compile Include="Patches\UnlockPatch.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResourceNames.cs" />
     <Compile Include="UnlockNames.cs" />
@@ -82,7 +84,7 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>mkdir "D:\ steam\steamapps\common\Techtonica\BepInEx\plugins\$(TargetName)"
-xcopy /q/y/i "$(TargetPath)" "D:\ steam\steamapps\common\Techtonica\BepInEx\plugins\$(TargetName)" /E /H /C</PostBuildEvent>
+    <PostBuildEvent>mkdir "C:\SteamLibrary\steamapps\common\Techtonica\BepInEx\plugins\$(TargetName)"
+xcopy /q/y/i "$(TargetPath)" "C:\SteamLibrary\steamapps\common\Techtonica\BepInEx\plugins\$(TargetName)" /E /H /C</PostBuildEvent>
   </PropertyGroup>
 </Project>

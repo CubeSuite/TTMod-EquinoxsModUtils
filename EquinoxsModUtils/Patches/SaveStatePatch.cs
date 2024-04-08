@@ -46,18 +46,28 @@ namespace EquinoxsModUtils.Patches
                     if(addedJsons.Contains(json)) continue;
                     TechTreeState.UnlockState state = (TechTreeState.UnlockState)JsonUtility.FromJson(json, typeof(TechTreeState.UnlockState));
 
+                    string name = $"Unlock #{state.unlockRef.uniqueId}";
+                    string translatedName = LocsUtility.TranslateStringFromHash(state.unlockRef.displayNameHash);
+                    if (!string.IsNullOrEmpty(state.unlockRef.displayName)) {
+                        name = state.unlockRef.displayName;
+                    }
+                    else if (!string.IsNullOrEmpty(translatedName)) {
+                        name = translatedName;
+                    }
+
                     int existingIndex = -1;
                     if (isUnlockStateUnique(state, out existingIndex)) {
                         ModUtils.unlockStatesToAdd.Add(state);
                         addedJsons.Add(json);
+                        //ModUtils.LogEMUInfo($"Loaded unique UnlockState from file for unlock '{name}'");
                     }
                     else {
                         ModUtils.unlockStatesToAdd[existingIndex] = state;
-                        ModUtils.LogEMUInfo($"Overwrote UnlockState for Unlock '{state.unlockRef.displayNameHash}' with state loaded from file");
+                        ModUtils.LogEMUInfo($"Overwrote UnlockState for Unlock '{name}' with state loaded from file");
                     }
                 }
 
-                ModUtils.LogEMUInfo($"Loaded {ModUtils.unlockStatesToAdd.Count} Custom Unlocks");
+                ModUtils.LogEMUInfo($"Loaded {ModUtils.unlockStatesToAdd.Count} UnlockStates from file and registered them to be added to GameDefines");
             }
         }
 

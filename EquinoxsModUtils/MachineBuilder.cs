@@ -416,7 +416,7 @@ namespace EquinoxsModUtils
                     break;
 
                 default:
-                    Debug.Log($"Skipped rendering hologram for unknown type: {type}");
+                    ModUtils.LogEMUWarning($"Skipped rendering hologram for unknown type: {type}");
                     break;
             }
 

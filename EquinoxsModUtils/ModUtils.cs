@@ -24,7 +24,7 @@ namespace EquinoxsModUtils
         // Plugin Details
         private const string MyGUID = "com.equinox.EquinoxsModUtils";
         private const string PluginName = "EquinoxsModUtils";
-        private const string VersionString = "3.1.0";
+        private const string VersionString = "3.2.0";
 
         private static readonly Harmony Harmony = new Harmony(MyGUID);
         public static ManualLogSource Log = new ManualLogSource(PluginName);
@@ -71,6 +71,8 @@ namespace EquinoxsModUtils
             Harmony.CreateAndPatchAll(typeof(SaveStatePatch));
             Harmony.CreateAndPatchAll(typeof(TechActivatedSystemMessagePatch));
             Harmony.CreateAndPatchAll(typeof(SteamLobbyConnectorPatch));
+            Harmony.CreateAndPatchAll(typeof(UnlockPatch));
+            Harmony.CreateAndPatchAll(typeof(TechTreeGridPatch));
 
             Logger.LogInfo($"PluginName: {PluginName}, VersionString: {VersionString} is loaded.");
             Log = Logger;
@@ -160,8 +162,8 @@ namespace EquinoxsModUtils
                 LogEMUInfo("GameDefines.instace loaded");
 
                 foreach(Unlock unlock in GameDefines.instance.unlocks) {
+                    string name = LocsUtility.TranslateStringFromHash(unlock.displayNameHash);
                     if(unlock.requiredTier == TechTreeState.ResearchTier.NONE) {
-                        string name = LocsUtility.TranslateStringFromHash(unlock.displayNameHash);
                         LogEMUWarning($"Unlock '{name}' has required Tier NONE, setting to Tier0");
                         unlock.requiredTier = TechTreeState.ResearchTier.Tier0;
                     }
@@ -220,6 +222,23 @@ namespace EquinoxsModUtils
                     unlock.uniqueId = GetNewUnlockUniqueID();
                     GameDefines.instance.unlocks.Add(unlock);
                     LogEMUInfo($"Added new Unlock: '{unlock.uniqueId}'");
+
+                    // Unlock State
+                    unlockStatesToAdd.Add(new TechTreeState.UnlockState() {
+                        isActive = false,
+                        everActive = true,
+                        isDiscovered = true,
+                        scansCompleted = 0,
+                        scansRequired = 0,
+                        dependencies = new int[0],
+                        requirementFor = new int[0],
+                        tier = unlock.requiredTier,
+                        exists = true,
+                        unlockRef = unlock,
+                        unlockedRecipes = new List<SchematicsRecipeData>(),
+                        unlockedResources = new List<ResourceInfo>(),
+                        unlockedUpgrades = new List<UpgradeInfo>()
+                    });
                 }
             }
         }
@@ -342,7 +361,7 @@ namespace EquinoxsModUtils
             return true;
         }
 
-        private static bool areListIntsEqual(List<int> list1, List<int> list2, bool sort) {
+        private static bool AreListIntsEqual(List<int> list1, List<int> list2, bool sort) {
             if(list1.Count != list2.Count) return false;
 
             if (sort) {
@@ -525,8 +544,8 @@ namespace EquinoxsModUtils
                 List<int> recipeIngredients = recipe.ingTypes.Select(item => item.uniqueId).ToList();
                 List<int> recipeResults = recipe.outputTypes.Select(item => item.uniqueId).ToList();
 
-                if(areListIntsEqual(ingredientIDs, recipeIngredients, true) && 
-                   areListIntsEqual(resultIDs, recipeResults, true)) {
+                if(AreListIntsEqual(ingredientIDs, recipeIngredients, true) && 
+                   AreListIntsEqual(resultIDs, recipeResults, true)) {
                     if (shouldLog) LogEMUInfo($"Found recipe");
                     return recipe;
                 }
@@ -657,22 +676,22 @@ namespace EquinoxsModUtils
             unlockDependencies.Add(displayNameHash, details.dependencyNames);
             unlocksToAdd.Add(newUnlock);
 
-            // Unlock State
-            unlockStatesToAdd.Add(new TechTreeState.UnlockState() {
-                isActive = false,
-                everActive = true,
-                isDiscovered = true,
-                scansCompleted = 0,
-                scansRequired = 0,
-                dependencies = new int[0],
-                requirementFor = new int[0],
-                tier = details.requiredTier,
-                exists = true,
-                unlockRef = newUnlock,
-                unlockedRecipes = new List<SchematicsRecipeData>(),
-                unlockedResources = new List<ResourceInfo>(),
-                unlockedUpgrades = new List<UpgradeInfo>()
-            });
+            //// Unlock State
+            //unlockStatesToAdd.Add(new TechTreeState.UnlockState() {
+            //    isActive = false,
+            //    everActive = true,
+            //    isDiscovered = true,
+            //    scansCompleted = 0,
+            //    scansRequired = 0,
+            //    dependencies = new int[0],
+            //    requirementFor = new int[0],
+            //    tier = details.requiredTier,
+            //    exists = true,
+            //    unlockRef = newUnlock,
+            //    unlockedRecipes = new List<SchematicsRecipeData>(),
+            //    unlockedResources = new List<ResourceInfo>(),
+            //    unlockedUpgrades = new List<UpgradeInfo>()
+            //});
 
             if (shouldLog) LogEMUInfo($"Successfully created new Unlock '{details.displayName}'");
         }
@@ -886,12 +905,12 @@ namespace EquinoxsModUtils
         /// <typeparam name="T">The class that the field belongs to</typeparam>
         /// <param name="name">The name of the field</param>
         /// <param name="instance">The instance of the class that you would like to get the value from</param>
-        /// <returns>The value of the field if successful (it can be null), null otherwise</returns>
+        /// <returns>The value of the field if successful (it can be null), default(V) otherwise</returns>
         public static object GetPrivateField<T>(string name, T instance) {
             FieldInfo field = typeof(T).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
             if(field == null) {
                 LogEMUError($"Could not find the field '{name}' under type {typeof(T)}. Aborting attempt to get value");
-                return null;
+                return default;
             }
 
             return field.GetValue(instance);
