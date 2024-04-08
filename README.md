@@ -39,7 +39,8 @@ A collection of utilities for modding the game Techtonica that make it easier to
 * ```public static bool hasGameStateLoaded``` set to true once ```GameState.instance``` has loaded. Useful for checking if data you need has loaded yet.  
 * ```public static bool hasGameDefinesLoaded``` set to true once ```GameDefines.instance``` has loaded. Useful for checking if data you need has loaded yet.  
 * ```public static bool hasSaveStateLoaded``` set to true once ```SaveState.instance``` has loaded. Useful for checking if data you need has loaded yet.  
-* ```public static bool hasTechTreeStateLoaded``` set to true once ```TechTreeState.instance``` has loaded. Useful for checking if data you need has loaded yet.  
+* ```public static bool hasTechTreeStateLoaded``` set to true once ```TechTreeState.instance``` has loaded. Useful for checking if data you need has loaded yet.
+*  ```public static bool hasGameLoaded``` set to true once ```LoadingUI.instance``` has loaded and then returned to null once the player presses any key.
 
 ## Functions
 
@@ -532,6 +533,28 @@ private void OnTechTreeStateLoaded(object sender, EventArgs e) {
   if (TechTreeState.instance.IsUnlockActive(myUnlockID) {
     ...
   }
+}
+```
+
+### GameLoaded
+
+```csharp
+public static event EventHandler GameLoaded;
+```
+
+This event is fired once ```LoadingUI.instance```  has loaded and then returned to null once the player presses any key. Use this event to delay executing code until the player is in-world.
+**Note:** sender is null for this event.
+
+Example use:
+
+```csharp
+void Awake(){
+  ModUtils.GameLoaded += OnGameLoaded;
+}
+
+private void OnGameLoaded(object sender, EventArgs e){
+  Blueprints.BuildQueue.LoadBuildQueueFromFile();
+  Blueprints.BuildQueue.RenderHolograms();
 }
 ```
 
