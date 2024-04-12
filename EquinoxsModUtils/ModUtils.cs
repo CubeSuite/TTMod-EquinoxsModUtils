@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Policy;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
@@ -24,7 +25,7 @@ namespace EquinoxsModUtils
         // Plugin Details
         private const string MyGUID = "com.equinox.EquinoxsModUtils";
         private const string PluginName = "EquinoxsModUtils";
-        private const string VersionString = "3.2.0";
+        private const string VersionString = "3.3.0";
 
         private static readonly Harmony Harmony = new Harmony(MyGUID);
         public static ManualLogSource Log = new ManualLogSource(PluginName);
@@ -32,6 +33,7 @@ namespace EquinoxsModUtils
         // Objects & Variables
         public static bool hasGameStateLoaded = false;
         public static bool hasGameDefinesLoaded = false;
+        public static bool hasMachineManagerLoaded = false;
         public static bool hasSaveStateLoaded = false;
         public static bool hasTechTreeStateLoaded = false;
         public static bool hasGameLoaded = false;
@@ -46,10 +48,12 @@ namespace EquinoxsModUtils
 
         internal static Dictionary<string, string> hashTranslations = new Dictionary<string, string>();
         internal static List<TechTreeState.UnlockState> unlockStatesToAdd = new List<TechTreeState.UnlockState>();
+        internal static List<int> customUnlockIDs = new List<int>();
 
         // Events
         public static event EventHandler GameStateLoaded;
         public static event EventHandler GameDefinesLoaded;
+        public static event EventHandler MachineManagerLoaded;
         public static event EventHandler SaveStateLoaded;
         public static event EventHandler TechTreeStateLoaded;
         public static event EventHandler GameLoaded;
@@ -94,6 +98,7 @@ namespace EquinoxsModUtils
         private void Update() {
             if (!hasGameStateLoaded) CheckIfGameStateLoaded();
             if (!hasGameDefinesLoaded) CheckIfGameDefinesLoaded();
+            if (!hasMachineManagerLoaded) CheckIfMachineManagerLoaded();
             if (!hasSaveStateLoaded) CheckIfSaveStateLoaded();
             if (!hasTechTreeStateLoaded) CheckIfTechTreeStateLoaded();
             if (!hasGameLoaded) CheckIfGameLoaded();
@@ -193,6 +198,13 @@ namespace EquinoxsModUtils
             }
         }
 
+        private static void CheckIfMachineManagerLoaded() {
+            if(MachineManager.instance == null) return;
+            hasMachineManagerLoaded = true;
+            MachineManagerLoaded?.Invoke(MachineManager.instance, EventArgs.Empty);
+            LogEMUInfo("MachineManager.instance loaded");
+        }
+
         private static void CheckIfGameLoaded() {
             if(LoadingUI.instance == null && !loadingUIObserved) {
                 return;
@@ -220,6 +232,7 @@ namespace EquinoxsModUtils
 
                 if (FindDependencies(ref unlock)) {
                     unlock.uniqueId = GetNewUnlockUniqueID();
+                    customUnlockIDs.Add(unlock.uniqueId);
                     GameDefines.instance.unlocks.Add(unlock);
                     LogEMUInfo($"Added new Unlock: '{unlock.uniqueId}'");
 
@@ -937,8 +950,8 @@ namespace EquinoxsModUtils
         /// Checks if the provided object is null and logs if it is null
         /// </summary>
         /// <param name="obj">The object to be checked</param>
-        /// <param name="name">The name of the object to add to the log lnie</param>
-        /// <param name="shouldLog">Whether an info messaeg should be logged if the object is not null</param>
+        /// <param name="name">The name of the object to add to the log line</param>
+        /// <param name="shouldLog">Whether an info message should be logged if the object is not null</param>
         /// <returns>true if not null</returns>
         public static bool NullCheck(object obj, string name, bool shouldLog = false) {
             if (obj == null) {
@@ -948,6 +961,62 @@ namespace EquinoxsModUtils
             else {
                 if(shouldLog) LogEMUInfo($"{name} is not null");
                 return true;
+            }
+        }
+
+        /// <summary>
+        /// Checks if a mod is installed by trying to find the dll provided in the argument.
+        /// </summary>
+        /// <param name="dllName">The name of the mod's dll file. You do not need to include .dll at the end</param>
+        /// <param name="shouldLog">Whether an info message should be logged with the result</param>
+        /// <returns></returns>
+        public static bool IsModInstalled(string dllName, bool shouldLog = false) {
+            dllName = dllName.Replace(".dll", "");
+            string pluginsFolder = AppDomain.CurrentDomain.BaseDirectory + "BepInEx/plugins";
+            string[] files = Directory.GetFiles(pluginsFolder);
+            foreach(string file in files) {
+                if (file.Contains(dllName)) {
+                    if(shouldLog) LogEMUInfo($"Found {dllName}.dll, mod is installed");
+                    return true;
+                }
+            }
+
+            string[] modFolders = Directory.GetDirectories(pluginsFolder);
+            foreach(string modFolder in modFolders) {
+                string[] modFiles = Directory.GetFiles(modFolder);
+                foreach(string modFile in modFiles) {
+                    if (modFile.Contains(dllName)) {
+                        if (shouldLog) LogEMUInfo($"Found {dllName}.dll, mod is installed");
+                        return true;
+                    }
+                }
+            }
+
+            LogEMUWarning($"Could not find the file {dllName}.dll, mod is not installed");
+            return false;
+        }
+
+        /// <summary>
+        /// Gets a Texture2D of the Resource passed in the arguments for using in GUI.
+        /// </summary>
+        /// <param name="name">The name of the Resource.</param>
+        /// <param name="shouldLog">Passed to GetResourceInfoByName()</param>
+        /// <returns>A Texture2D of the Resource's Sprite for use in GUI.</returns>
+        public static Texture2D GetImageForResource(string name, bool shouldLog = false) {
+            ResourceInfo info = GetResourceInfoByName(name, shouldLog);
+            Sprite sprite = info.sprite;
+            if (sprite.rect.width != sprite.texture.width) {
+                Texture2D newText = new Texture2D((int)sprite.rect.width, (int)sprite.rect.height);
+                Color[] newColors = sprite.texture.GetPixels((int)sprite.textureRect.x,
+                                                             (int)sprite.textureRect.y,
+                                                             (int)sprite.textureRect.width,
+                                                             (int)sprite.textureRect.height);
+                newText.SetPixels(newColors);
+                newText.Apply();
+                return newText;
+            }
+            else {
+                return sprite.texture;
             }
         }
 

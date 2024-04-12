@@ -19,12 +19,16 @@ namespace EquinoxsModUtils.Patches
         [HarmonyPatch(typeof(SaveState), "SaveToFile")]
         [HarmonyPostfix]
         static void saveMod(SaveState __instance, string saveLocation, bool saveToPersistent = true) {
-            int count = ModUtils.unlockStatesToAdd.Count;
+            List<TechTreeState.UnlockState> toSave = ModUtils.unlockStatesToAdd.Where(
+                state => ModUtils.customUnlockIDs.Contains(state.unlockRef.uniqueId)
+            ).ToList();
+
+            int count = toSave.Count;
             ModUtils.LogEMUInfo($"Saving {count} custom Unlocks to file...");
 
             Directory.CreateDirectory(dataFolder);
             List<string> unlockStateJsons = new List<string>();
-            foreach (TechTreeState.UnlockState state in ModUtils.unlockStatesToAdd) {
+            foreach (TechTreeState.UnlockState state in toSave) {
                 unlockStateJsons.Add(JsonUtility.ToJson(state));
             }
 
