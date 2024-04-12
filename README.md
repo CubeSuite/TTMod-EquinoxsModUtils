@@ -17,6 +17,8 @@
       - [GetPrivateField](#getprivatefield) 
       - [SetPrivateField](#setprivatefield)
       - [NullCheck](#nullcheck)
+      - [IsModInstalled](#ismodinstalled)
+      - [GetImageForResource](#getimageforresource)
     - [Machine Building](#machine-building)
       - [BuildMachine](#buildmachine)
         - [Building A Simple Machine](#building-a-simple-machine)
@@ -27,6 +29,8 @@
     - [GameDefinesLoaded](#gamedefinesloaded)
     - [SaveStateLoaded](#savestateloaded)
     - [TechTreeStateLoaded](#techtreestateloaded)
+    - [MachineManagerLoaded](#machinemanagerloaded)
+    - [GameLoaded](#gameloaded)
   - [How To Add A New Unlock / Tech](#how-to-add-a-new-unlock--tech)
 
 # EquinoxsModUtils
@@ -40,6 +44,7 @@ A collection of utilities for modding the game Techtonica that make it easier to
 * ```public static bool hasGameDefinesLoaded``` set to true once ```GameDefines.instance``` has loaded. Useful for checking if data you need has loaded yet.  
 * ```public static bool hasSaveStateLoaded``` set to true once ```SaveState.instance``` has loaded. Useful for checking if data you need has loaded yet.  
 * ```public static bool hasTechTreeStateLoaded``` set to true once ```TechTreeState.instance``` has loaded. Useful for checking if data you need has loaded yet.
+* ```public static bool hasMachineManagerLoaded``` set to true once ```MachineManager.instance``` has loaded. Useful for accessing machines once they have loaded in.
 *  ```public static bool hasGameLoaded``` set to true once ```LoadingUI.instance``` has loaded and then returned to null once the player presses any key.
 
 ## Functions
@@ -336,6 +341,51 @@ TechTreeNode node = UIManager.instance.techTreeMenu.GridUI.GetNodeByUnlock(...);
 ```
 Read those first two lines as 'If the null check fails, return'
 
+#### IsModInstalled
+
+```csharp
+public static bool IsModInstalled(
+  string dllName,
+  bool shouldLog = false
+)
+```
+
+This folder search the folder '{GameFolder}/BepInEx/plugins' for the dll files passed in the arguments. Note that you do not need to inlcude '.dll' at the end of the argument.
+Returns ```true``` if the specified .dll file is found. 
+
+Example use:
+```csharp
+void OnGameDefinesLoaded(object sender, EventArgs e){
+  if(ModUtils.IsModInstalled("VirtualCores"){
+    myNewCustomUnlock.coreCountNeeded *= 2;
+  }
+}
+```
+
+See bottom of this readme for details on GameDefinesLoaded event.
+
+#### GetImageForResource
+
+```csharp
+public static Texture2D GetImageForResource(
+  string name,
+  bool shouldLog = false
+)
+```
+
+This function tries to find the ```Resource``` given in the ```name``` argument and converts its ```Sprite``` into a ```Texture2D``` for use in GUI.
+Returns the ```Texture2D``` if the ```Resource``` is found, ```null``` if not. The ```shouldLog``` argument is passed to the ```GetResourceInfoByName()``` function that this function uses.
+
+Example use:
+```csharp
+void OnGUI(){
+  Texture2D buttonImage = ModUtils.GetImageForResource(ResourceNames.Limestone);
+  if(GUI.Button(buttonRect, buttonImage, buttonStyle)){
+    Debug.Log("User clicked Limestone button");
+  }
+}
+```
+
 ### Machine Building
 
 #### BuildMachine
@@ -533,6 +583,35 @@ private void OnTechTreeStateLoaded(object sender, EventArgs e) {
   if (TechTreeState.instance.IsUnlockActive(myUnlockID) {
     ...
   }
+}
+```
+
+### Machine Manager Loaded
+
+```csharp
+public static event EventHandler MachineManagerLoaded;
+```
+
+This event is fired once ```MachineManager.instance``` is no longer null. Use this event to run code that effects machines once they have loaded in.
+Example use:
+
+**Note:** the ```sender``` argument is ```MachineManager.instance```, so you can access it through that or the normal approach. Both used in the example below.
+
+```csharo
+void Awake(){
+  ModUtils.MachineManagerLoaded += OnMachineManagerLoaded;
+}
+
+private void OnMachineManagerLoaded(object sender, EventArgs e){
+  MachineManager instance = sender as MachineManager;
+  MachineInstanceList<ChestInstance, ChestDefinition> chestsList = MachineManager.instance.GetMachineList<ChestInstance, ChestDefinition>(MachineTypeEnum.Chest);
+  for(int i = 0; i < chestsList.myArray.Length; i++) {
+    ChestInstance chest = chestsList.myArray[i];
+    uint id = chest.commonInfo.instanceId;
+    if (WormholeManager.chestChannelMap.ContainsKey(id)) {
+        chest.commonInfo.inventories[0] = WormholeManager.GetInventoryForChest(id);
+    }
+}
 }
 ```
 
