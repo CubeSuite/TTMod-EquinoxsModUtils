@@ -586,7 +586,7 @@ private void OnTechTreeStateLoaded(object sender, EventArgs e) {
 }
 ```
 
-### Machine Manager Loaded
+### MachineManagerLoaded
 
 ```csharp
 public static event EventHandler MachineManagerLoaded;
