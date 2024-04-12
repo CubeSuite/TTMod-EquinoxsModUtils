@@ -597,7 +597,7 @@ Example use:
 
 **Note:** the ```sender``` argument is ```MachineManager.instance```, so you can access it through that or the normal approach. Both used in the example below.
 
-```csharo
+```csharp
 void Awake(){
   ModUtils.MachineManagerLoaded += OnMachineManagerLoaded;
 }
