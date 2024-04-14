@@ -25,7 +25,7 @@ namespace EquinoxsModUtils
         // Plugin Details
         private const string MyGUID = "com.equinox.EquinoxsModUtils";
         private const string PluginName = "EquinoxsModUtils";
-        private const string VersionString = "3.3.0";
+        private const string VersionString = "3.3.1";
 
         private static readonly Harmony Harmony = new Harmony(MyGUID);
         public static ManualLogSource Log = new ManualLogSource(PluginName);
@@ -38,6 +38,8 @@ namespace EquinoxsModUtils
         public static bool hasTechTreeStateLoaded = false;
         public static bool hasGameLoaded = false;
         private static bool loadingUIObserved = false;
+        
+        private static string dataFolder = $"{Application.persistentDataPath}/Equinox's Mod Utils";
 
         private static List<Unlock> unlocksToAdd = new List<Unlock>();
         private static Dictionary<string, List<string>> unlockDependencies = new Dictionary<string, List<string>>();
@@ -216,6 +218,8 @@ namespace EquinoxsModUtils
             }
 
             else if(LoadingUI.instance == null && loadingUIObserved) {
+                LoadUnlockStates(SaveState.instance.metadata.worldName);
+
                 hasGameLoaded = true;
                 GameLoaded?.Invoke(null, EventArgs.Empty);
                 LogEMUInfo("Game Loaded");
@@ -387,6 +391,44 @@ namespace EquinoxsModUtils
             }
 
             return true;
+        }
+
+        // Data Functions
+
+        internal static void SaveUnlockStates(string worldName) {
+            List<string> fileLines = new List<string>();
+            foreach (int id in ModUtils.customUnlockIDs) {
+                fileLines.Add($"{id}|{TechTreeState.instance.IsUnlockActive(id)}");
+            }
+
+            string saveFile = $"{dataFolder}/{worldName}.txt";
+            File.WriteAllLines(saveFile, fileLines);
+        }
+
+        internal static void LoadUnlockStates(string worldName) {
+            string saveFile = $"{dataFolder}/{worldName}.txt";
+            if (!File.Exists(saveFile)) return;
+
+            string[] fileLines = File.ReadAllLines(saveFile);
+            foreach(string line in fileLines) {
+                int id = int.Parse(line.Split('|')[0]);
+                bool unlocked = bool.Parse(line.Split('|')[1]);
+
+                if (!customUnlockIDs.Contains(id)) {
+                    LogEMUError($"Saved Unlock #{id} is not in customUnlocksIDs");
+                    continue;
+                }
+
+                if (unlocked) {
+                    UnlockTechAction action = new UnlockTechAction {
+                        info = new UnlockTechInfo {
+                            unlockID = id,
+                            drawPower = false
+                        }
+                    };
+                    NetworkMessageRelay.instance.SendNetworkAction(action);
+                }
+            }
         }
 
         // Public Functions For Other Devs
@@ -1004,6 +1046,8 @@ namespace EquinoxsModUtils
         /// <returns>A Texture2D of the Resource's Sprite for use in GUI.</returns>
         public static Texture2D GetImageForResource(string name, bool shouldLog = false) {
             ResourceInfo info = GetResourceInfoByName(name, shouldLog);
+            if (info == null) return null;
+
             Sprite sprite = info.sprite;
             if (sprite.rect.width != sprite.texture.width) {
                 Texture2D newText = new Texture2D((int)sprite.rect.width, (int)sprite.rect.height);
