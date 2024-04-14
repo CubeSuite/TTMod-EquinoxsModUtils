@@ -12,10 +12,6 @@ namespace EquinoxsModUtils.Patches
 {
     public class SaveStatePatch
     {
-        
-
-        private static Dictionary<int, bool> unlockStates = new Dictionary<int, bool>();
-
         [HarmonyPatch(typeof(SaveState), "SaveToFile")]
         [HarmonyPostfix]
         static void saveMod(SaveState __instance, string saveLocation, bool saveToPersistent = true) {
