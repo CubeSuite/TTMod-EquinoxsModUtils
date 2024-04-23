@@ -16,6 +16,7 @@ namespace EquinoxsModUtils.Patches
         [HarmonyPostfix]
         static void saveMod(SaveState __instance, string saveLocation, bool saveToPersistent = true) {
             ModUtils.SaveUnlockStates(__instance.metadata.worldName);
+            ModUtils.FireGameSavedEvent(__instance.metadata.worldName);
         }
     }
 }

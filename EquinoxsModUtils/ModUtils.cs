@@ -5,11 +5,13 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Security.Policy;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using EquinoxsModUtils.Patches;
+using FIMSpace.Generating.Rules.Placement;
 using FluffyUnderware.DevTools.Extensions;
 using HarmonyLib;
 using MessagePack.Formatters;
@@ -25,7 +27,7 @@ namespace EquinoxsModUtils
         // Plugin Details
         private const string MyGUID = "com.equinox.EquinoxsModUtils";
         private const string PluginName = "EquinoxsModUtils";
-        private const string VersionString = "3.3.1";
+        private const string VersionString = "3.4.0";
 
         private static readonly Harmony Harmony = new Harmony(MyGUID);
         public static ManualLogSource Log = new ManualLogSource(PluginName);
@@ -41,9 +43,11 @@ namespace EquinoxsModUtils
         
         private static string dataFolder = $"{Application.persistentDataPath}/Equinox's Mod Utils";
 
+        internal static List<NewResourceDetails> resourcesToAdd = new List<NewResourceDetails>();
+        internal static List<NewRecipeDetails> recipesToAdd = new List<NewRecipeDetails>();
         private static List<Unlock> unlocksToAdd = new List<Unlock>();
-        private static Dictionary<string, List<string>> unlockDependencies = new Dictionary<string, List<string>>();
 
+        private static Dictionary<string, List<string>> unlockDependencies = new Dictionary<string, List<string>>();
         private static Dictionary<string, int> resourceNameToIDMap = new Dictionary<string, int>();
         private static Dictionary<string, int> unlockNameToIDMap = new Dictionary<string, int>();
         private static Dictionary<int, Unlock> unlockCache = new Dictionary<int, Unlock>();
@@ -58,6 +62,8 @@ namespace EquinoxsModUtils
         public static event EventHandler MachineManagerLoaded;
         public static event EventHandler SaveStateLoaded;
         public static event EventHandler TechTreeStateLoaded;
+
+        public static event EventHandler GameSaved;
         public static event EventHandler GameLoaded;
 
         // Testing
@@ -79,6 +85,7 @@ namespace EquinoxsModUtils
             Harmony.CreateAndPatchAll(typeof(SteamLobbyConnectorPatch));
             Harmony.CreateAndPatchAll(typeof(UnlockPatch));
             Harmony.CreateAndPatchAll(typeof(TechTreeGridPatch));
+            Harmony.CreateAndPatchAll(typeof(GameDefinesPatch));
 
             Logger.LogInfo($"PluginName: {PluginName}, VersionString: {VersionString} is loaded.");
             Log = Logger;
@@ -122,15 +129,22 @@ namespace EquinoxsModUtils
         }
         
         internal static void LogEMUInfo(string message) {
-            Debug.Log($"[EMU]: {message}");
+            //Debug.Log($"[EMU]: {message}");
+            Log.LogInfo(message);
         }
 
         internal static void LogEMUWarning(string message) {
-            Debug.LogWarning($"[EMU]: {message}");
+            //Debug.LogWarning($"[EMU]: {message}");
+            Log.LogWarning(message);
         }
 
         internal static void LogEMUError(string message) {
-            Debug.LogError($"[EMU]: {message}");
+            //Debug.LogError($"[EMU]: {message}");
+            Log.LogError(message);
+        }
+
+        internal static void FireGameSavedEvent(string worldName) {
+            GameSaved?.Invoke(worldName, EventArgs.Empty);
         }
 
         // Name Printing For Updates
@@ -472,6 +486,34 @@ namespace EquinoxsModUtils
         }
 
         /// <summary>
+        /// Finds the ResourceInfo that matches the name given in the argument without checking if GameDefines.instance has loaded.
+        /// </summary>
+        /// <param name="name">The displayName of the desired resource</param>
+        /// <param name="shouldLog">Whether [EMU] Info messages should be logged for this call</param>
+        /// <returns>ResourceInfo if successful, null if not.</returns>
+        public static ResourceInfo GetResourceInfoByNameUnsafe(string name, bool shouldLog = false) {
+            if (resourceNameToIDMap.ContainsKey(name)) {
+                if (shouldLog) LogEMUInfo("Found resource in cache");
+                return GameDefines.instance.resources[resourceNameToIDMap[name]];
+            }
+
+            foreach (ResourceInfo info in GameDefines.instance.resources) {
+                if (info.displayName == name) {
+                    if (shouldLog) LogEMUInfo($"Found resource with name '{name}'");
+                    if (!resourceNameToIDMap.ContainsKey(name)) {
+                        resourceNameToIDMap.Add(name, GameDefines.instance.resources.IndexOf(info));
+                    }
+
+                    return info;
+                }
+            }
+
+            LogEMUWarning($"Could not find resource with name '{name}'");
+            LogEMUWarning($"Try using a name from EquinoxsModUtils.ResourceNames");
+            return null;
+        }
+
+        /// <summary>
         /// Finds the resource ID of the Resource with name given in the argument.
         /// Language may affect this function.
         /// </summary>
@@ -515,6 +557,64 @@ namespace EquinoxsModUtils
                 LogEMUError($"{e.Message}");
                 LogEMUError($"{e.StackTrace}");
                 return MachineTypeEnum.NONE;
+            }
+        }
+
+        /// <summary>
+        /// Requests EMU to create a Resource with the provided details at the correct time.
+        /// </summary>
+        /// <param name="details">Container for the details of your new resource</param>
+        public static void AddNewResource(NewResourceDetails details) {
+            resourcesToAdd.Add(details);
+        }
+
+        /// <summary>
+        /// Finds a new uniqueId to use for a new instance of ResourceInfo or derived class.
+        /// </summary>
+        /// <param name="shouldLog">Whether the new ID should be logged in an EMU Info message.</param>
+        /// <returns>The new ID to use</returns>
+        public static int GetNewResourceID(bool shouldLog = false) {
+            int max = 0;
+            foreach (ResourceInfo info in GameDefines.instance.resources) {
+                if (info.uniqueId > max) max = info.uniqueId;
+            }
+
+            if (shouldLog) LogEMUInfo($"Found new Resource ID: {max + 1}");
+            return max + 1;
+        }
+
+        /// <summary>
+        /// Updates the .unlock member of a ResourceInfo. Use once TechTreeState has loaded.
+        /// </summary>
+        /// <param name="resourceName">The display name of the ResourceInfo to update</param>
+        /// <param name="unlockName">The display name of the Unlock that unlocks this item</param>
+        /// <param name="shouldLog">Whether an EMU Info message should be logged on success. Passed to internal functions.</param>
+        public static void UpdateResourceUnlock(string resourceName, string unlockName, bool shouldLog = false) {
+            ResourceInfo resource = GetResourceInfoByName(resourceName, shouldLog);
+            if (!NullCheck(resource, resourceName)) return;
+
+            Unlock unlock = GetUnlockByName(unlockName, shouldLog);
+            if(!NullCheck(unlock, unlockName)) return;
+
+            resource.unlock = unlock;
+            if (shouldLog) {
+                LogEMUInfo($"Successfully set .unlock for {resource.displayName} to Unlock '{unlockName}'");
+            }
+        }
+
+        /// <summary>
+        /// Updates the .headerType member of a ResourceInfo. Use once GameDefines has loaded.
+        /// </summary>
+        /// <param name="resourceName">The display name of the ResourceInfo to update</param>
+        /// <param name="header">The SchematicsSubHeader that the ResourceInfo should use</param>
+        /// <param name="shouldLog">Whether an EMU Info message should be logged on success. Passed to internal functions.</param>
+        public static void UpdateResourceHeaderType(string resourceName, SchematicsSubHeader header, bool shouldLog = false) {
+            ResourceInfo resource = GetResourceInfoByName(resourceName, shouldLog);
+            if (!NullCheck(resource, resourceName)) return;
+
+            resource.headerType = header;
+            if (shouldLog) {
+                LogEMUInfo($"Successfully set .headerType for {resource.displayName}");
             }
         }
 
@@ -608,6 +708,41 @@ namespace EquinoxsModUtils
 
             LogEMUError($"Could not find recipe, please check the resource IDs passed in the arguments.");
             return null;
+        }
+
+        /// <summary>
+        /// Requests EMU to create a SchematicsRecipeData with the provided details at the correct time.
+        /// </summary>
+        /// <param name="details">Container for the details of your new recipe</param>
+        /// <param name="shouldLog">Whether an EMU Info message should be logged if recipe is valid</param>
+        public static void AddNewRecipe(NewRecipeDetails details, bool shouldLog = false) {
+            if(details.ingredients.Count == 0) {
+                LogEMUError("NewRecipeDetails has no ingredients, will not be added");
+                return;
+            }
+
+            if(details.outputs.Count == 0) {
+                LogEMUError("NweRecipeDetails has no outputs, will not be added");
+                return;
+            }
+            
+            recipesToAdd.Add(details);
+            if(shouldLog) LogEMUInfo($"Registered NewRecipeDetails for adding to game");
+        }
+
+        /// <summary>
+        /// Finds a new uniqueId to use for a new SchematicsRecipeData instance.
+        /// </summary>
+        /// <param name="shouldLog">Whether the new ID should be logged in an EMU Info message.</param>
+        /// <returns>The new ID to use</returns>
+        public static int GetNewRecipeID(bool shouldLog = false) {
+            int max = 0;
+            foreach (SchematicsRecipeData recipe in GameDefines.instance.schematicsRecipeEntries) {
+                if (recipe.uniqueId > max) max = recipe.uniqueId;
+            }
+
+            if (shouldLog) LogEMUInfo($"Found new Recipe ID: {max + 1}");
+            return max + 1;
         }
 
         #endregion
@@ -1039,6 +1174,22 @@ namespace EquinoxsModUtils
         }
 
         /// <summary>
+        /// Copies all the values from 'original' onto 'target'. Be cautious of shared references.
+        /// </summary>
+        /// <typeparam name="T">The type of the object to be cloned.</typeparam>
+        /// <param name="original">The object to copy fields from</param>
+        /// <param name="target">The object to set fields for</param>
+        public static void CloneObject<T>(T original, ref T target) {
+            foreach (FieldInfo fieldInfo in typeof(T).GetFields()) {
+                fieldInfo.SetValue(target, fieldInfo.GetValue(original));
+            }
+        }
+
+        #endregion
+
+        #region Images
+
+        /// <summary>
         /// Gets a Texture2D of the Resource passed in the arguments for using in GUI.
         /// </summary>
         /// <param name="name">The name of the Resource.</param>
@@ -1062,6 +1213,55 @@ namespace EquinoxsModUtils
             else {
                 return sprite.texture;
             }
+        }
+
+        /// <summary>
+        /// Creates a Texture2D from the Embedded Resource at the path provided in the argument.
+        /// </summary>
+        /// <param name="path">The path of the Embedded Resource image.</param>
+        /// <param name="shouldLog">Whether an EMU Info message should be logged on successful load.</param>
+        /// <returns>Texture2D if file is found, null otherwise</returns>
+        public static Texture2D LoadTexture2DFromFile(string resourceName, bool shouldLog = false, Assembly assembly = null) {
+            if(assembly == null) assembly = Assembly.GetCallingAssembly();
+
+            string[] resourceNames = assembly.GetManifestResourceNames();
+            string fullPath = Array.Find(resourceNames, name => name.EndsWith(resourceName));
+
+            if (fullPath == null) {
+                LogEMUError($"Could not find image resource '{resourceName}' in mod assembly.");
+                return null;
+            }
+
+            using (Stream stream = assembly.GetManifestResourceStream(fullPath)) {
+                if (stream == null) {
+                    LogEMUError($"Could not load image resource '{resourceName}' from mod assembly stream.");
+                    return null;
+                }
+
+                using (MemoryStream memoryStream = new MemoryStream()) {
+                    stream.CopyTo(memoryStream);
+                    byte[] fileData = memoryStream.ToArray();
+
+                    Texture2D output = new Texture2D(2, 2);
+                    output.LoadImage(fileData);
+
+                    if (shouldLog) LogEMUInfo($"Created Texture2D from image resource '{resourceName}'");
+
+                    return output;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Calls LoadTexture2DFromFile() and converts the result to a Sprite.
+        /// </summary>
+        /// <param name="path">The path of the Embedded Resource image.</param>
+        /// <param name="shouldLog">Passed to LoadTexture2DFromFile()</param>
+        /// <returns></returns>
+        public static Sprite LoadSpriteFromFile(string path, bool shouldLog = false) {
+            Assembly assembly = Assembly.GetCallingAssembly();
+            Texture2D texture = LoadTexture2DFromFile(path, shouldLog, assembly);
+            return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0, 0), 512);
         }
 
         #endregion
