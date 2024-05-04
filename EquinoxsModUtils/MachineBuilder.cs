@@ -155,22 +155,23 @@ namespace EquinoxsModUtils
         }
 
         private static void doFloorBuild(int resID, GridInfo gridInfo) {
-            FloorBuildInfo floorBuildInfo = new FloorBuildInfo() {
-                machineType = resID,
-                rotation = gridInfo.yawRot,
-                startCorner = gridInfo.minPos,
-                endCorner = gridInfo.minPos
-            };
-            BuilderInfo builderInfo = (BuilderInfo)SaveState.GetResInfoFromId(resID);
-            StreamedHologramData hologram = getHologram(builderInfo, gridInfo);
+            // ToDo: doFloorBuild()
+            //FloorBuildInfo floorBuildInfo = new FloorBuildInfo() {
+            //    machineType = resID,
+            //    rotation = gridInfo.yawRot,
+            //    startCorner = gridInfo.minPos,
+            //    endCorner = gridInfo.minPos
+            //};
+            //BuilderInfo builderInfo = (BuilderInfo)SaveState.GetResInfoFromId(resID);
+            //StreamedHologramData hologram = getHologram(builderInfo, gridInfo);
 
-            FloorBuilder builder = (FloorBuilder)Player.instance.builder.GetBuilderForType(BuilderInfo.BuilderType.FloorBuilder);
-            builder.floorBuildInfo = floorBuildInfo;
-            builder = (FloorBuilder)setCommonBuilderFields(builder, builderInfo, gridInfo, hologram);
+            //FloorBuilder builder = (FloorBuilder)Player.instance.builder.GetBuilderForType(BuilderInfo.BuilderType.FloorBuilder);
+            //builder.floorBuildInfo = floorBuildInfo;
+            //builder = (FloorBuilder)setCommonBuilderFields(builder, builderInfo, gridInfo, hologram);
 
-            setPlayerBuilderPrivateFields(builder, builderInfo);
-            builder.BuildFromNetworkData(floorBuildInfo, false);
-            Player.instance.inventory.TryRemoveResources(resID, 1);
+            //setPlayerBuilderPrivateFields(builder, builderInfo);
+            //builder.BuildFromNetworkData(floorBuildInfo, false);
+            //Player.instance.inventory.TryRemoveResources(resID, 1);
         }
 
         private static void doResearchCoreBuild(int resID, GridInfo gridInfo) {
@@ -282,11 +283,12 @@ namespace EquinoxsModUtils
                     break;
 
                 case MachineTypeEnum.Floor:
-                    FloorInstance floor = MachineManager.instance.Get<FloorInstance, FloorDefinition>(0, type);
-                    hologram = floor.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += floor.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += floor.gridInfo.dims.z / 2.0f;
-                    yawRotation = floor.gridInfo.yawRot;
+                    // ToDo: Floors
+                    //FloorInstance floor = MachineManager.instance.Get<FloorInstance, FloorDefinition>(0, type);
+                    //hologram = floor.myDef.GenerateUnbuiltHologramData();
+                    //thisHologramPos.x += floor.gridInfo.dims.x / 2.0f;
+                    //thisHologramPos.z += floor.gridInfo.dims.z / 2.0f;
+                    //yawRotation = floor.gridInfo.yawRot;
                     break;
 
                 case MachineTypeEnum.Inserter:

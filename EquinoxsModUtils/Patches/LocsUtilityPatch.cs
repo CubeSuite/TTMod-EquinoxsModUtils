@@ -9,9 +9,9 @@ namespace EquinoxsModUtils.Patches
 {
     public class LocsUtilityPatch
     {
-        [HarmonyPatch(typeof(LocsUtility), "TranslateStringFromHash")]
+        [HarmonyPatch(typeof(LocsUtility), nameof(LocsUtility.TranslateStringFromHash), new Type[] { typeof(string), typeof(string), typeof(UnityEngine.Object) })]
         [HarmonyPrefix]
-        private static bool GetModdedTranslation(string hash, ref string __result, string original = null) {
+        private static bool GetModdedTranslation(ref string __result, string hash) {
             if (string.IsNullOrEmpty(hash)) return true;
 
             if (ModUtils.hashTranslations.ContainsKey(hash)) {

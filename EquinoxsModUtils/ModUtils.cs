@@ -1,12 +1,17 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Security.Cryptography.X509Certificates;
 using System.Security.Policy;
+using System.Threading.Tasks;
+using AwesomeCharts;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
@@ -15,8 +20,11 @@ using FIMSpace.Generating.Rules.Placement;
 using FluffyUnderware.DevTools.Extensions;
 using HarmonyLib;
 using MessagePack.Formatters;
+using Mirror;
+using ProceduralNoiseProject;
 using TriangleNet;
 using UnityEngine;
+using UnityEngine.Networking;
 using Voxeland5;
 
 namespace EquinoxsModUtils
@@ -27,7 +35,7 @@ namespace EquinoxsModUtils
         // Plugin Details
         private const string MyGUID = "com.equinox.EquinoxsModUtils";
         private const string PluginName = "EquinoxsModUtils";
-        private const string VersionString = "3.4.0";
+        private const string VersionString = "4.0.0";
 
         private static readonly Harmony Harmony = new Harmony(MyGUID);
         public static ManualLogSource Log = new ManualLogSource(PluginName);
@@ -45,6 +53,7 @@ namespace EquinoxsModUtils
 
         internal static List<NewResourceDetails> resourcesToAdd = new List<NewResourceDetails>();
         internal static List<NewRecipeDetails> recipesToAdd = new List<NewRecipeDetails>();
+        internal static List<SchematicsSubHeader> subHeadersToAdd = new List<SchematicsSubHeader>();
         private static List<Unlock> unlocksToAdd = new List<Unlock>();
 
         private static Dictionary<string, List<string>> unlockDependencies = new Dictionary<string, List<string>>();
@@ -52,9 +61,14 @@ namespace EquinoxsModUtils
         private static Dictionary<string, int> unlockNameToIDMap = new Dictionary<string, int>();
         private static Dictionary<int, Unlock> unlockCache = new Dictionary<int, Unlock>();
 
-        internal static Dictionary<string, string> hashTranslations = new Dictionary<string, string>();
+        public static Dictionary<string, string> hashTranslations = new Dictionary<string, string>();
         internal static List<TechTreeState.UnlockState> unlockStatesToAdd = new List<TechTreeState.UnlockState>();
-        internal static List<int> customUnlockIDs = new List<int>();
+        internal static List<string> customUnlockHashedNames = new List<string>();
+
+        private static Dictionary<string, object> customMachineData = new Dictionary<string, object>();
+        private static bool hasCustomMachineDataLoaded = false;
+
+        private static float sSinceLastPacedLog = 0;
 
         // Events
         public static event EventHandler GameStateLoaded;
@@ -78,14 +92,15 @@ namespace EquinoxsModUtils
             Harmony.PatchAll();
             CheckBepInExConfig();
 
+            Harmony.CreateAndPatchAll(typeof(FHG_UtilsPatch));
+            Harmony.CreateAndPatchAll(typeof(GameDefinesPatch));
             Harmony.CreateAndPatchAll(typeof(LocsUtilityPatch));
-            Harmony.CreateAndPatchAll(typeof(TechTreeStatePatch));
             Harmony.CreateAndPatchAll(typeof(SaveStatePatch));
             Harmony.CreateAndPatchAll(typeof(TechActivatedSystemMessagePatch));
-            Harmony.CreateAndPatchAll(typeof(SteamLobbyConnectorPatch));
-            Harmony.CreateAndPatchAll(typeof(UnlockPatch));
             Harmony.CreateAndPatchAll(typeof(TechTreeGridPatch));
-            Harmony.CreateAndPatchAll(typeof(GameDefinesPatch));
+            Harmony.CreateAndPatchAll(typeof(TechTreeStatePatch));
+            Harmony.CreateAndPatchAll(typeof(UIManagerPatch));
+            Harmony.CreateAndPatchAll(typeof(UnlockPatch));
 
             Logger.LogInfo($"PluginName: {PluginName}, VersionString: {VersionString} is loaded.");
             Log = Logger;
@@ -111,6 +126,8 @@ namespace EquinoxsModUtils
             if (!hasSaveStateLoaded) CheckIfSaveStateLoaded();
             if (!hasTechTreeStateLoaded) CheckIfTechTreeStateLoaded();
             if (!hasGameLoaded) CheckIfGameLoaded();
+
+            sSinceLastPacedLog += Time.deltaTime;
         }
 
         private static void CheckBepInExConfig() {
@@ -197,11 +214,15 @@ namespace EquinoxsModUtils
 
         private static void CheckIfSaveStateLoaded() {
             if (GameLogic.instance == null) return;
-            if (SaveState.instance != null) {
-                hasSaveStateLoaded = true;
-                SaveStateLoaded?.Invoke(SaveState.instance, EventArgs.Empty);
-                LogEMUInfo("SaveState.instance loaded");
-            }
+            if (SaveState.instance == null) return;
+            if (SaveState.instance.metadata == null) return;
+            if (string.IsNullOrEmpty(SaveState.instance.metadata.worldName)) return;
+
+            hasSaveStateLoaded = true;
+            LoadCustomMachineData(SaveState.instance.metadata.worldName);
+
+            SaveStateLoaded?.Invoke(SaveState.instance, EventArgs.Empty);
+            LogEMUInfo("SaveState.instance loaded");
         }
 
         private static void CheckIfTechTreeStateLoaded() {
@@ -250,7 +271,7 @@ namespace EquinoxsModUtils
 
                 if (FindDependencies(ref unlock)) {
                     unlock.uniqueId = GetNewUnlockUniqueID();
-                    customUnlockIDs.Add(unlock.uniqueId);
+                    customUnlockHashedNames.Add(unlock.displayNameHash);
                     GameDefines.instance.unlocks.Add(unlock);
                     LogEMUInfo($"Added new Unlock: '{unlock.uniqueId}'");
 
@@ -411,8 +432,9 @@ namespace EquinoxsModUtils
 
         internal static void SaveUnlockStates(string worldName) {
             List<string> fileLines = new List<string>();
-            foreach (int id in ModUtils.customUnlockIDs) {
-                fileLines.Add($"{id}|{TechTreeState.instance.IsUnlockActive(id)}");
+            foreach (string name in ModUtils.customUnlockHashedNames) {
+                Unlock unlock = ModUtils.GetUnlockByName(LocsUtility.TranslateStringFromHash(name));
+                fileLines.Add($"{name}|{TechTreeState.instance.IsUnlockActive(unlock.uniqueId)}");
             }
 
             string saveFile = $"{dataFolder}/{worldName}.txt";
@@ -425,24 +447,72 @@ namespace EquinoxsModUtils
 
             string[] fileLines = File.ReadAllLines(saveFile);
             foreach(string line in fileLines) {
-                int id = int.Parse(line.Split('|')[0]);
-                bool unlocked = bool.Parse(line.Split('|')[1]);
+                string hashedName = line.Split('|')[0];
+                if (int.TryParse(hashedName, out int oldID)) continue;
 
-                if (!customUnlockIDs.Contains(id)) {
-                    LogEMUError($"Saved Unlock #{id} is not in customUnlocksIDs");
+                bool unlocked = bool.Parse(line.Split('|')[1]);
+                if (!customUnlockHashedNames.Contains(hashedName)) {
+                    LogEMUError($"Saved Unlock '{hashedName}' is not in customUnlocksIDs");
                     continue;
                 }
 
                 if (unlocked) {
                     UnlockTechAction action = new UnlockTechAction {
                         info = new UnlockTechInfo {
-                            unlockID = id,
+                            unlockID = ModUtils.GetUnlockByName(LocsUtility.TranslateStringFromHash(hashedName)).uniqueId,
                             drawPower = false
                         }
                     };
                     NetworkMessageRelay.instance.SendNetworkAction(action);
                 }
             }
+        }
+
+        internal static void SaveCustomMachineData(string worldName) {
+            List<string> fileLines = new List<string>();
+            foreach(KeyValuePair<string, object> dataPair in customMachineData) {
+                fileLines.Add($"{dataPair.Key}|{dataPair.Value}");
+            }
+
+            string saveFile = $"{dataFolder}/{worldName} CustomData.txt";
+            File.WriteAllLines(saveFile, fileLines);
+        }
+
+        internal static void LoadCustomMachineData(string worldName) {
+            string saveFile = $"{dataFolder}/{worldName} CustomData.txt";
+            if (!File.Exists(saveFile)) {
+                LogEMUWarning($"No CustomData save file found for world '{worldName}'");
+                return;
+            }
+
+            string[] fileLines = File.ReadAllLines(saveFile);
+            foreach(string line in fileLines) {
+                string[] parts = line.Split('|');
+                string valueString = parts[1];
+                object value = null;
+                
+                string key = parts[0];
+                string[] keyParts = key.Split('-');
+                string type = keyParts[2];
+
+                switch (type) {
+                    case "System.UInt32": value = uint.Parse(valueString); break;
+                    case "System.Int32": value = int.Parse(valueString); break;
+                    case "System.Single": value = float.Parse(valueString); break;
+                    case "System.Double": value = double.Parse(valueString); break;
+                    case "System.Boolean": value = bool.Parse(valueString); break;
+                    case "System.String": value = valueString; break;
+                    case "System.Char": value = char.Parse(valueString); break;
+                    default:
+                        LogEMUError($"Cannot load custom data (key: '{key}') with unhandled type: '{type}'");
+                        continue;
+                }
+
+                customMachineData[key] = value;
+            }
+            
+            hasCustomMachineDataLoaded = true;
+            Log.LogInfo("Loaded custom machine data");
         }
 
         // Public Functions For Other Devs
@@ -731,17 +801,107 @@ namespace EquinoxsModUtils
         }
 
         /// <summary>
+        /// Adds a new SchematicsSubHeader with the details provided in the arguments.
+        /// </summary>
+        /// <param name="title">The title of the new SchematicsSubHeader</param>
+        /// <param name="parent">The parent SchematicsHeader this should appear under</param>
+        /// <param name="priority">Controls where the sub-category should be placed</param>
+        /// <param name="shouldLog">Whether an EMU Info messages should be logged on success</param>
+        public static void AddNewSchematicsSubHeader(string title, string parentTitle, int priority, bool shouldLog = false) {
+            SchematicsSubHeader subHeader = (SchematicsSubHeader)ScriptableObject.CreateInstance(typeof(SchematicsSubHeader));
+            subHeader.title = $"{parentTitle}/{title}";
+            subHeader.priority = priority;
+            subHeadersToAdd.Add(subHeader);
+            if (shouldLog) LogEMUInfo($"Registered new SchematicsSubHeader '{title}' for adding to game");
+        }
+
+        /// <summary>
+        /// Tries to find the SchematicsHeader with a title matching the one in the argument.
+        /// </summary>
+        /// <param name="title">The title to search for.</param>
+        /// <param name="shouldLog">Whether an EMU Info message should be logged on success</param>
+        /// <returns>The SchematicsHeader if successful, null otherwise</returns>
+        public static SchematicsHeader GetSchematicsHeaderByTitle(string title, bool shouldLog = false) {
+            if (!NullCheck(GameDefines.instance, "GameDefines.instance")) {
+                LogEMUError("GetSchematicsHeaderByTitle() called before GameDefines.instance has loaded");
+                LogEMUWarning($"Try using the event ModUtils.GameDefinesLoaded or checking ModUtils.hasGameDefinesLoaded.");
+                return null;
+            }
+
+            foreach (SchematicsHeader header in GameDefines.instance.schematicsHeaderEntries) {
+                if (header.title == title) {
+                    if (shouldLog) LogEMUInfo($"Found SchematicsHeader with title '{title}'");
+                    return header;
+                }
+            }
+
+            LogEMUError($"Could not find SchematicsSubHeader with title '{title}'");
+            return null;
+        }
+
+        /// <summary>
+        /// Tries to find the SchematicsSubHeader with a title matching the one in the argument.
+        /// </summary>
+        /// <param name="title">The title to search for.</param>
+        /// <param name="shouldLog">Whether an EMU Info message should be logged on success</param>
+        /// <returns>The SchematicsSubHeader if successful, null otherwise</returns>
+        public static SchematicsSubHeader GetSchematicsSubHeaderByTitle(string title, bool shouldLog = false) {
+            if (!NullCheck(GameDefines.instance, "GameDefines.instance")) {
+                LogEMUError("GetSchematicsSubHeaderByTitle() called before GameDefines.instance has loaded");
+                LogEMUWarning($"Try using the event ModUtils.GameDefinesLoaded or checking ModUtils.hasGameDefinesLoaded.");
+                return null;
+            }
+
+            foreach(SchematicsSubHeader subHeader in GameDefines.instance.schematicsSubHeaderEntries) {
+                if (subHeader.title == title) {
+                    if (shouldLog) LogEMUInfo($"Found SchematicsSubHeader with title '{title}'");
+                    return subHeader;
+                }
+            }
+
+            LogEMUError($"Could not find SchematicsSubHeader with title '{title}'");
+            return null;
+        }
+
+        /// <summary>
         /// Finds a new uniqueId to use for a new SchematicsRecipeData instance.
         /// </summary>
         /// <param name="shouldLog">Whether the new ID should be logged in an EMU Info message.</param>
-        /// <returns>The new ID to use</returns>
+        /// <returns>The new ID if successful, -1 otherwise.</returns>
         public static int GetNewRecipeID(bool shouldLog = false) {
+            if (!NullCheck(GameDefines.instance, "GameDefines.instance")) {
+                LogEMUError("GetNewRecipeID() called before GameDefines.instance has loaded");
+                LogEMUWarning($"Try using the event ModUtils.GameDefinesLoaded or checking ModUtils.hasGameDefinesLoaded.");
+                return -1;
+            }
+
             int max = 0;
             foreach (SchematicsRecipeData recipe in GameDefines.instance.schematicsRecipeEntries) {
                 if (recipe.uniqueId > max) max = recipe.uniqueId;
             }
 
             if (shouldLog) LogEMUInfo($"Found new Recipe ID: {max + 1}");
+            return max + 1;
+        }
+
+        /// <summary>
+        /// Finds a new uniqueID to use for a new SchematicsSubHeader instance.
+        /// </summary>
+        /// <param name="shouldLog">Wheter the new ID should be logged in an EMU Info message.</param>
+        /// <returns>The new ID if successful, -1 otherwise.</returns>
+        public static int GetNewSchematicsSubHeaderID(bool shouldLog = false) {
+            if(!NullCheck(GameDefines.instance, "GameDefines.instance")) {
+                LogEMUError("GetNewSchematicsSubHeaderID() called before GameDefines.instance has loaded");
+                LogEMUWarning($"Try using the event ModUtils.GameDefinesLoaded or checking ModUtils.hasGameDefinesLoaded.");
+                return -1;
+            }
+
+            int max = 0;
+            foreach(SchematicsSubHeader subHeader in GameDefines.instance.schematicsSubHeaderEntries) {
+                if(subHeader.uniqueId > max) max = subHeader.uniqueId;
+            }
+
+            if (shouldLog) LogEMUInfo($"Found new SchematicsSubHeader ID: {max + 1}");
             return max + 1;
         }
 
@@ -821,6 +981,38 @@ namespace EquinoxsModUtils
         }
 
         /// <summary>
+        /// Finds the Unlock that matches the name given in the argument without checking if GameDefines.instance is null.
+        /// Language may affect this function.
+        /// </summary>
+        /// <param name="name">The displayName of the desired Unlock</param>
+        /// <param name="shouldLog">Whether [EMU] Info messages should be logged for this call</param>
+        /// <returns>Unlock if successful, null if not</returns>
+        public static Unlock GetUnlockByNameUnsafe(string name, bool shouldLog = false) {
+            if (shouldLog) LogEMUInfo($"Looking for Unlock with name '{name}'");
+
+            if (unlockNameToIDMap.ContainsKey(name)) {
+                if (GameDefines.instance.unlocks.Count > unlockNameToIDMap[name]) {
+                    if (shouldLog) LogEMUInfo("Found unlock in cache");
+                    return GameDefines.instance.unlocks[unlockNameToIDMap[name]];
+                }
+            }
+
+            foreach (Unlock tech in GameDefines.instance.unlocks) {
+                if (tech.displayNameHash == LocsUtility.GetHashString(name)) {
+                    if (shouldLog) LogEMUInfo("Found Unlock");
+                    if (!unlockNameToIDMap.ContainsKey(tech.displayNameHash)) {
+                        unlockNameToIDMap.Add(tech.displayNameHash, tech.uniqueId);
+                    }
+                    return tech;
+                }
+            }
+
+            LogEMUWarning($"Couldn't find Unlock with name '{name}'");
+            LogEMUWarning("Try using a name from EquinoxsModUtils.UnlockNames");
+            return null;
+        }
+
+        /// <summary>
         /// Registers a new Unlock to be added to the TechTree once GameDefines and TechTreeState have loaded.
         /// </summary>
         /// <param name="details">Details of the new Unlock. Ensure that all are provided.</param>
@@ -858,6 +1050,17 @@ namespace EquinoxsModUtils
             // Hashed Details
             string displayNameHash = LocsUtility.GetHashString(details.displayName);
             string descriptionHash = LocsUtility.GetHashString(details.description);
+
+            if (hashTranslations.ContainsKey(displayNameHash)) {
+                LogEMUError($"The Unlock name '{details.displayName}' is already in use. Abandoning attempt to add"); 
+                return;
+            }
+
+            if (hashTranslations.ContainsKey(descriptionHash)) {
+                LogEMUError($"The Unlock description '{details.description}' is already in use. Abandoning attempt to add");
+                return;
+            }
+
             hashTranslations.Add(displayNameHash, details.displayName);
             hashTranslations.Add(descriptionHash, details.description);
             newUnlock.displayNameHash = displayNameHash;
@@ -1124,6 +1327,23 @@ namespace EquinoxsModUtils
         }
 
         /// <summary>
+        /// Sets the value of a private static field
+        /// </summary>
+        /// <typeparam name="T">The class that the field belongs to</typeparam>
+        /// <param name="name">The name of the field</param>
+        /// <param name="instance">The instance of the class that you would like to modify</param>
+        /// <param name="value">The new value to set</param>
+        public static void SetPrivateStaticField<T>(string name, T instance, object value) {
+            FieldInfo field = typeof(T).GetField(name, BindingFlags.Static | BindingFlags.NonPublic);
+            if (field == null) {
+                LogEMUError($"Could not find the static field '{name}' under type {typeof(T)}. Aborting attempt to set value");
+                return;
+            }
+
+            field.SetValue(instance, value);
+        }
+
+        /// <summary>
         /// Checks if the provided object is null and logs if it is null
         /// </summary>
         /// <param name="obj">The object to be checked</param>
@@ -1182,6 +1402,169 @@ namespace EquinoxsModUtils
         public static void CloneObject<T>(T original, ref T target) {
             foreach (FieldInfo fieldInfo in typeof(T).GetFields()) {
                 fieldInfo.SetValue(target, fieldInfo.GetValue(original));
+            }
+        }
+
+        /// <summary>
+        /// Loops through all members of 'obj' and logs its type, name and value.
+        /// </summary>
+        /// <param name="obj">The object to print all values of.</param>
+        /// <param name="name">The name of the object to print at the start of the function.</param>
+        public static void DebugObject(object obj, string name) {
+            if (!NullCheck(obj, name)) {
+                LogEMUError("Can't debug null object");
+                return;
+            }
+
+            Dictionary<Type, string> basicTypeNames = new Dictionary<Type, string>
+            {
+                { typeof(bool), "bool" },
+                { typeof(byte), "byte" },
+                { typeof(sbyte), "sbyte" },
+                { typeof(char), "char" },
+                { typeof(short), "short" },
+                { typeof(ushort), "ushort" },
+                { typeof(int), "int" },
+                { typeof(uint), "uint" },
+                { typeof(long), "long" },
+                { typeof(ulong), "ulong" },
+                { typeof(float), "float" },
+                { typeof(double), "double" },
+                { typeof(decimal), "decimal" },
+                { typeof(string), "string" }
+            };
+
+            Type objType = obj.GetType();
+            FieldInfo[] fields = objType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+
+            LogEMUInfo($"Debugging {objType.Name} '{name}':");
+            foreach (FieldInfo field in fields) {
+                string value = field.GetValue(obj).ToString();
+                string type = basicTypeNames.ContainsKey(field.FieldType) ? basicTypeNames[field.FieldType] : field.FieldType.ToString();
+
+                if (type == "char") value = $"'{value}'";
+                else if (type == "string") value = $"\"{value}\"";
+
+                LogEMUInfo($"\t{type} {field.Name} = {value}");
+            }
+        }
+
+        /// <summary>
+        /// Calls Debug.Log(message) if the time since the last call is greater than delaySeconds
+        /// </summary>
+        /// <param name="message">The message to log</param>
+        /// <param name="delaySeconds">How many seconds must pass before logging again. Default = 1s</param>
+        public static void PacedLog(string message, float delaySeconds = 1f) {
+            if(sSinceLastPacedLog > delaySeconds) {
+                Debug.Log(message);
+                sSinceLastPacedLog = 0;
+            }
+        }
+
+        public static void FreeCursor(bool free) {
+            InputHandler.instance.uiInputBlocked = free;
+            InputHandler.instance.playerAimStickBlocked = free;
+            Cursor.lockState = free ? CursorLockMode.None : CursorLockMode.Locked;
+            Cursor.visible = free;
+            UIManagerPatch.freeCursor = free;
+        }
+
+        #endregion
+
+        #region Data Saving
+
+        /// <summary>
+        /// Adds a custom member for an instance of a machine if it has not already been added. See repo README for explanation.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="instanceId">The instanceId of the target machine.</param>
+        /// <param name="name">The name of the new member.</param>
+        /// <param name="value">The value of the new member.</param>
+        public static void AddCustomDataForMachine<T>(uint instanceId, string name, T value) {
+            List<string> acceptableTypes = new List<string>() {
+                typeof(uint).ToString(),
+                typeof(int).ToString(),
+                typeof(float).ToString(),
+                typeof(double).ToString(),
+                typeof(bool).ToString(),
+                typeof(string).ToString(),
+                typeof(char).ToString(),
+            };
+            if (!acceptableTypes.Contains(typeof(T).ToString())) {
+                LogEMUError($"EMU cannot save custom data of type '{typeof(T)}', please use one of: uint, int, float, double, bool, string, char");
+            }
+
+            string key = $"{instanceId}-{name}-{typeof(T)}";
+            if (!customMachineData.ContainsKey(key)) {
+                customMachineData.Add(key, value);
+            }
+        }
+
+        /// <summary>
+        /// Sets the value of a custom member for an instance of a machine. See repo README for explanation.
+        /// </summary>
+        /// <typeparam name="T">The type of the member. See repo README for acceptable types.</typeparam>
+        /// <param name="instanceId">The instanceId of the target machine.</param>
+        /// <param name="name">The name of the new member.</param>
+        /// <param name="value">The value of the new member.</param>
+        public static void UpdateCustomDataForMachine<T>(uint instanceId, string name, T value){
+            List<string> acceptableTypes = new List<string>() {
+                typeof(uint).ToString(),
+                typeof(int).ToString(),
+                typeof(float).ToString(),
+                typeof(double).ToString(),
+                typeof(bool).ToString(),
+                typeof(string).ToString(),
+                typeof(char).ToString(),
+            };
+            if (!acceptableTypes.Contains(typeof(T).ToString())) {
+                LogEMUError($"EMU cannot save custom data of type '{typeof(T)}', please use one of: uint, int, float, double, bool, string, char");
+            }
+
+            string key = $"{instanceId}-{name}-{typeof(T)}";
+            if (!customMachineData.ContainsKey(key)) {
+                LogEMUWarning($"Custom data with key '{key}' has not been added for machine yet, adding instead of updating.");
+                AddCustomDataForMachine(instanceId, name, value);
+                return;
+            }
+
+            customMachineData[key] = value;
+        }
+
+        /// <summary>
+        /// Gets the value of a custom member for an instance of a machine. See repo README for exlpanation.
+        /// </summary>
+        /// <typeparam name="T">The type of the member.</typeparam>
+        /// <param name="instanceId">The instanceId of the target machine.</param>
+        /// <param name="name">The name of the new member.</param>
+        /// <returns>The value of the new member if successful, default(T) otherwise.</returns>
+        public static T GetCustomDataForMachine<T>(uint instanceId, string name){
+            if (!hasCustomMachineDataLoaded) {
+                LogEMUError($"GetCustomDataForMachine() called before custom data has loaded.");
+                LogEMUInfo($"Try using the SaveStateLoaded event or hasSaveStateLoaded variable");
+                return default;
+            }
+
+            List<string> acceptableTypes = new List<string>() {
+                typeof(uint).ToString(),
+                typeof(int).ToString(),
+                typeof(float).ToString(),
+                typeof(double).ToString(),
+                typeof(bool).ToString(),
+                typeof(string).ToString(),
+                typeof(char).ToString(),
+            };
+            if (!acceptableTypes.Contains(typeof(T).ToString())) {
+                LogEMUError($"EMU cannot save custom data of type '{typeof(T)}', please use one of: uint, int, float, double, bool, string, char");
+            }
+
+            string key = $"{instanceId}-{name}-{typeof(T)}";
+            if (customMachineData.ContainsKey(key)) {
+                return (T)customMachineData[key];
+            }
+            else {
+                LogEMUError($"Could not find custom data with key '{key}'");
+                return default;
             }
         }
 
