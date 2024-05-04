@@ -235,8 +235,9 @@ namespace EquinoxsModUtils
         private static StreamedHologramData getHologram(BuilderInfo builderInfo, GridInfo gridInfo, int variationIndex = -1, ConveyorBuildInfo.ChainData? nullableChainData = null) {
             StreamedHologramData hologram = null;
             Vector3 thisHologramPos = gridInfo.BottomCenter;
-            int yawRotation = 0;
             MachineTypeEnum type = builderInfo.GetInstanceType();
+
+            Debug.Log($"buildDuration: {builderInfo.buildDuration}");
 
             if(type == MachineTypeEnum.Conveyor) {
                 ConveyorBuildInfo.ChainData chainData = (ConveyorBuildInfo.ChainData)nullableChainData;
@@ -249,172 +250,47 @@ namespace EquinoxsModUtils
 
                 thisHologramPos.x += conveyor.gridInfo.dims.x / 2.0f;
                 thisHologramPos.z += conveyor.gridInfo.dims.z / 2.0f;
-                yawRotation = gridInfo.yawRot;
 
-                Quaternion conveyorRotation = Quaternion.Euler(0, yawRotation, 0);
+                Quaternion conveyorRotation = Quaternion.Euler(0, gridInfo.yawRot, 0);
                 conveyorHologram.SetTransform(thisHologramPos, conveyorRotation);
                 conveyorHologram.type = builderInfo;
                 return conveyorHologram;
             }
 
+            if(type != MachineTypeEnum.Inserter) {
+                thisHologramPos.x += gridInfo.dims.x / 2.0f;
+                thisHologramPos.z += gridInfo.dims.z / 2.0f;
+            }
+
             switch (type) {
-                case MachineTypeEnum.Assembler:
-                    AssemblerInstance assembler = MachineManager.instance.Get<AssemblerInstance, AssemblerDefinition>(0, type);
-                    hologram = assembler.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += assembler.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += assembler.gridInfo.dims.z / 2.0f;
-                    yawRotation = assembler.gridInfo.yawRot;
-                    break;
-
-                case MachineTypeEnum.Chest:
-                    ChestInstance chest = MachineManager.instance.Get<ChestInstance, ChestDefinition>(0, type);
-                    hologram = chest.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += chest.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += chest.gridInfo.dims.z / 2.0f;
-                    yawRotation = chest.gridInfo.yawRot;
-                    break;
-
-                case MachineTypeEnum.Drill:
-                    DrillInstance drill = MachineManager.instance.Get<DrillInstance, DrillDefinition>(0, type);
-                    hologram = drill.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += drill.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += drill.gridInfo.dims.z / 2.0f;
-                    yawRotation = drill.gridInfo.yawRot;
-                    break;
+                case MachineTypeEnum.Assembler: hologram = ((AssemblerDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.Chest: hologram = ((ChestDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.Drill: hologram = ((ChestDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.Inserter: hologram = ((InserterDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.LightSticks: hologram = ((LightStickDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.Planter: hologram = ((PlanterDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.PowerGenerator: hologram = ((PowerGeneratorDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.ResearchCore: hologram = ((ResearchCoreDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.Smelter: hologram = ((SmelterDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.Stairs: hologram = ((StairsDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.Thresher: hologram = ((ThresherDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.TransitDepot: hologram = ((TransitDepotDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.TransitPole: hologram = ((TransitPoleDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.WaterWheel: hologram = ((WaterWheelDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.Accumulator: hologram = ((AccumulatorDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.HighVoltageCable: hologram = ((HighVoltageCableDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.VoltageStepper: hologram = ((VoltageStepperDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.Structure: hologram = ((StructureDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.BlastSmelter: hologram = ((BlastSmelterDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
 
                 case MachineTypeEnum.Floor:
+                    Debug.Log($"Can't get hologram for Floor type");
                     // ToDo: Floors
                     //FloorInstance floor = MachineManager.instance.Get<FloorInstance, FloorDefinition>(0, type);
                     //hologram = floor.myDef.GenerateUnbuiltHologramData();
                     //thisHologramPos.x += floor.gridInfo.dims.x / 2.0f;
                     //thisHologramPos.z += floor.gridInfo.dims.z / 2.0f;
                     //yawRotation = floor.gridInfo.yawRot;
-                    break;
-
-                case MachineTypeEnum.Inserter:
-                    InserterInstance inserter = MachineManager.instance.Get<InserterInstance, InserterDefinition>(0, type);
-                    hologram = inserter.myDef.GenerateUnbuiltHologramData();
-                    yawRotation = inserter.gridInfo.yawRot;
-                    break;
-
-                case MachineTypeEnum.LightSticks:
-                    LightStickInstance lightStick = MachineManager.instance.Get<LightStickInstance, LightStickDefinition>(0, type);
-                    hologram = lightStick.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += lightStick.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += lightStick.gridInfo.dims.z / 2.0f;
-                    yawRotation = lightStick.gridInfo.yawRot;
-                    break;
-
-                case MachineTypeEnum.Planter:
-                    PlanterInstance planter = MachineManager.instance.Get<PlanterInstance, PlanterDefinition>(0, type);
-                    hologram = planter.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += planter.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += planter.gridInfo.dims.z / 2.0f;
-                    yawRotation = planter.gridInfo.yawRot;
-                    break;
-
-                case MachineTypeEnum.PowerGenerator:
-                    PowerGeneratorInstance generator = MachineManager.instance.Get<PowerGeneratorInstance, PowerGeneratorDefinition>(0, type);
-                    hologram = generator.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += generator.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += generator.gridInfo.dims.z / 2.0f;
-                    yawRotation = generator.gridInfo.yawRot;
-                    break;
-
-                case MachineTypeEnum.ResearchCore:
-                    ResearchCoreInstance researchCore = MachineManager.instance.Get<ResearchCoreInstance, ResearchCoreDefinition>(0, type);
-                    hologram = researchCore.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += researchCore.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += researchCore.gridInfo.dims.z / 2.0f;
-                    yawRotation = researchCore.gridInfo.yawRot;
-                    break;
-
-                case MachineTypeEnum.Smelter:
-                    SmelterInstance smelter = MachineManager.instance.Get<SmelterInstance, SmelterDefinition>(0, type);
-                    hologram = smelter.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += smelter.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += smelter.gridInfo.dims.z / 2.0f;
-                    yawRotation = smelter.gridInfo.yawRot;
-                    break;
-
-                case MachineTypeEnum.Stairs:
-                    StairsInstance stairs = MachineManager.instance.Get<StairsInstance, StairsDefinition>(0, type);
-                    hologram = stairs.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += stairs.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += stairs.gridInfo.dims.z / 2.0f;
-                    yawRotation = stairs.gridInfo.yawRot;
-                    break;
-
-                case MachineTypeEnum.Thresher:
-                    ThresherInstance thresher = MachineManager.instance.Get<ThresherInstance, ThresherDefinition>(0, type);
-                    hologram = thresher.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += thresher.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += thresher.gridInfo.dims.z / 2.0f;
-                    yawRotation = thresher.gridInfo.yawRot;
-                    break;
-
-                case MachineTypeEnum.TransitDepot:
-                    TransitDepotInstance transitDepot = MachineManager.instance.Get<TransitDepotInstance, TransitDepotDefinition>(0, type);
-                    hologram = transitDepot.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += transitDepot.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += transitDepot.gridInfo.dims.z / 2.0f;
-                    yawRotation = transitDepot.gridInfo.yawRot;
-                    break;
-
-                case MachineTypeEnum.TransitPole:
-                    TransitPoleInstance transitPole = MachineManager.instance.Get<TransitPoleInstance, TransitPoleDefinition>(0, type);
-                    hologram = transitPole.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += transitPole.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += transitPole.gridInfo.dims.z / 2.0f;
-                    yawRotation = transitPole.gridInfo.yawRot;
-                    break;
-
-                case MachineTypeEnum.WaterWheel:
-                    WaterWheelInstance waterWheel = MachineManager.instance.Get<WaterWheelInstance, WaterWheelDefinition>(0, type);
-                    hologram = waterWheel.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += waterWheel.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += waterWheel.gridInfo.dims.z / 2.0f;
-                    yawRotation = waterWheel.gridInfo.yawRot;
-                    break;
-
-                case MachineTypeEnum.Accumulator:
-                    AccumulatorInstance accumulator = MachineManager.instance.Get<AccumulatorInstance, AccumulatorDefinition>(0, type);
-                    hologram = accumulator.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += accumulator.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += accumulator.gridInfo.dims.z / 2.0f;
-                    yawRotation = accumulator.gridInfo.yawRot;
-                    break;
-
-                case MachineTypeEnum.HighVoltageCable:
-                    HighVoltageCableInstance hvc = MachineManager.instance.Get<HighVoltageCableInstance, HighVoltageCableDefinition>(0, type);
-                    hologram = hvc.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += hvc.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += hvc.gridInfo.dims.z / 2.0f;
-                    yawRotation = hvc.gridInfo.yawRot;
-                    break;
-
-                case MachineTypeEnum.VoltageStepper:
-                    VoltageStepperInstance stepper = MachineManager.instance.Get<VoltageStepperInstance, VoltageStepperDefinition>(0, type);
-                    hologram = stepper.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += stepper.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += stepper.gridInfo.dims.z / 2.0f;
-                    yawRotation = stepper.gridInfo.yawRot;
-                    break;
-
-                case MachineTypeEnum.Structure:
-                    StructureInstance structure = MachineManager.instance.Get<StructureInstance, StructureDefinition>(0, type);
-                    hologram = structure.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += structure.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += structure.gridInfo.dims.z / 2.0f;
-                    yawRotation = structure.gridInfo.yawRot;
-                    break;
-
-                case MachineTypeEnum.BlastSmelter:
-                    BlastSmelterInstance blastSmelter = MachineManager.instance.Get<BlastSmelterInstance, BlastSmelterDefinition>(0, type);
-                    hologram = blastSmelter.myDef.GenerateUnbuiltHologramData();
-                    thisHologramPos.x += blastSmelter.gridInfo.dims.x / 2.0f;
-                    thisHologramPos.z += blastSmelter.gridInfo.dims.z / 2.0f;
-                    yawRotation = blastSmelter.gridInfo.yawRot;
                     break;
 
                 default:
@@ -424,7 +300,7 @@ namespace EquinoxsModUtils
 
             if (variationIndex != -1) hologram.variationNum = variationIndex;
 
-            Quaternion rotation = Quaternion.Euler(0, yawRotation, 0);
+            Quaternion rotation = Quaternion.Euler(0, gridInfo.yawRot, 0);
             hologram.SetTransform(thisHologramPos, rotation);
             hologram.type = builderInfo;
             return hologram;
