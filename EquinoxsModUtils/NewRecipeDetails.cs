@@ -45,6 +45,13 @@ namespace EquinoxsModUtils
 
             return recipe;
         }
+
+        public override string ToString()
+        {
+            var inputsStr = string.Join(", ", ingredients.Select(i => i.name));
+            var outputsStr = string.Join(", ", outputs.Select(i => i.name));
+            return $"({{{inputsStr}}} -> {{{outputsStr}}})";
+        } 
     }
 
     public struct RecipeResourceInfo{
