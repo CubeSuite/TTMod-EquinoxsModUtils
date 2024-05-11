@@ -48,8 +48,8 @@ namespace EquinoxsModUtils
 
         public override string ToString()
         {
-            var inputsStr = string.Join(", ", ingredients));
-            var outputsStr = string.Join(", ", outputs);
+            string inputsStr = string.Join(", ", ingredients));
+            string outputsStr = string.Join(", ", outputs);
             return $"({{{inputsStr}}} -> {{{outputsStr}}})";
         } 
     }
