@@ -48,8 +48,8 @@ namespace EquinoxsModUtils
 
         public override string ToString()
         {
-            var inputsStr = string.Join(", ", ingredients.Select(i => i.name));
-            var outputsStr = string.Join(", ", outputs.Select(i => i.name));
+            var inputsStr = string.Join(", ", ingredients));
+            var outputsStr = string.Join(", ", outputs);
             return $"({{{inputsStr}}} -> {{{outputsStr}}})";
         } 
     }
@@ -61,6 +61,11 @@ namespace EquinoxsModUtils
         public RecipeResourceInfo(string _name, int _quantity) {
             name = _name;
             quantity = _quantity;
+        }
+
+        public override string ToString()
+        {
+            return $"({quantity} {name})"
         }
     }
 }
