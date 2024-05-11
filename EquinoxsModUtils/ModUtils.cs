@@ -797,7 +797,7 @@ namespace EquinoxsModUtils
             }
             
             recipesToAdd.Add(details);
-            if(shouldLog) LogEMUInfo($"Registered NewRecipeDetails for adding to game");
+            if(shouldLog) LogEMUInfo($"Registered NewRecipeDetails for adding to game: {details}");
         }
 
         /// <summary>
