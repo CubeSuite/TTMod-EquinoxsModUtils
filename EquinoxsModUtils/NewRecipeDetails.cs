@@ -48,9 +48,9 @@ namespace EquinoxsModUtils
 
         public override string ToString()
         {
-            string inputsStr = string.Join(", ", ingredients));
-            string outputsStr = string.Join(", ", outputs);
-            return $"({{{inputsStr}}} -> {{{outputsStr}}})";
+            string ingredientsList = string.Join(", ", ingredients);
+            string outputsList = string.Join(", ", outputs);
+            return $"({{{ingredientsList}}} -> {{{outputsList}}})";
         } 
     }
 
@@ -65,7 +65,7 @@ namespace EquinoxsModUtils
 
         public override string ToString()
         {
-            return $"({quantity} {name})"
+            return $"({quantity} {name})";
         }
     }
 }
