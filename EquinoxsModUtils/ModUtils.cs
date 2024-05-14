@@ -96,6 +96,7 @@ namespace EquinoxsModUtils
             Harmony.CreateAndPatchAll(typeof(GameDefinesPatch));
             Harmony.CreateAndPatchAll(typeof(LocsUtilityPatch));
             Harmony.CreateAndPatchAll(typeof(SaveStatePatch));
+            Harmony.CreateAndPatchAll(typeof(StringPatternsList));
             Harmony.CreateAndPatchAll(typeof(TechActivatedSystemMessagePatch));
             Harmony.CreateAndPatchAll(typeof(TechTreeGridPatch));
             Harmony.CreateAndPatchAll(typeof(TechTreeStatePatch));
@@ -1566,6 +1567,19 @@ namespace EquinoxsModUtils
                 LogEMUError($"Could not find custom data with key '{key}'");
                 return default;
             }
+        }
+
+        /// <summary>
+        /// Checks if any custom data exists for the machine instanceId provided in the argument.
+        /// </summary>
+        /// <param name="instanceId">The instanceId of the machine.</param>
+        /// <returns>true if data is found, false if not</returns>
+        public static bool CustomDataExistsForMachine(uint instanceId) {
+            foreach(string key in customMachineData.Keys) {
+                if (key.Split('-')[0] == instanceId.ToString()) return true;
+            }
+
+            return false;
         }
 
         #endregion

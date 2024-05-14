@@ -22,6 +22,7 @@ namespace EquinoxsModUtils
         public const string AdvancedPowderBricks = "Advanced Powder Bricks";
         public const string AdvancedBrickThreshing = "Advanced Brick Threshing";
         public const string SteelSlab = "Steel Slab";
+        public const string AdvancedClayProduction = "Advanced Clay Production";
         public const string Assembler = "Assembler";
         public const string ASMPowerTrimII = "ASM PowerTrim II";
         public const string ASMPowerTrimIII = "ASM PowerTrim III";
@@ -39,6 +40,7 @@ namespace EquinoxsModUtils
         public const string CrankSpan = "CrankSpan";
         public const string BasicForging = "Basic Forging";
         public const string BasicSlabThreshing = "Basic Slab Threshing";
+        public const string BasicIncineration = "Basic Incineration";
         public const string BasicLogistics = "Basic Logistics";
         public const string BasicManufacturing = "Basic Manufacturing";
         public const string BasicMechanisms = "Basic Mechanisms";
@@ -47,6 +49,8 @@ namespace EquinoxsModUtils
         public const string BasicBrickThreshing = "Basic Brick Threshing";
         public const string BasicSlabs = "Basic Slabs";
         public const string Beacon = "Beacon";
+        public const string VBHeightIII = "VB-Height III";
+        public const string VBHeightII = "VB-Height II";
         public const string Biobrick = "Biobrick";
         public const string BioDenseII = "BioDense II";
         public const string BioDenseIII = "BioDense III";
@@ -90,6 +94,7 @@ namespace EquinoxsModUtils
         public const string DecorativeMaterials = "Decorative Materials";
         public const string MiningCharge = "Mining Charge";
         public const string MassProductionMiningCharge = "Mass Production (Mining Charge)";
+        public const string Do_not_use_tech = "Do_not_use_tech";
         public const string ElectricComponents = "Electric Components";
         public const string MiningDrillMKII = "Mining Drill MKII";
         public const string MDRPowerTrimII = "MDR PowerTrim II";
@@ -119,6 +124,10 @@ namespace EquinoxsModUtils
         public const string GatesIV = "Gates IV";
         public const string GravelThreshing = "Gravel Threshing";
         public const string OptimizationBlueResearchCore = "Optimization (Blue Research Core)";
+        public const string BiobrickDiesel = "Biobrick Diesel";
+        public const string BiobrickDieselInfusion = "Biobrick Diesel Infusion";
+        public const string BiobrickDieselRecycling = "Biobrick Diesel Recycling";
+        public const string BiobrickDieselRefinement = "Biobrick Diesel Refinement";
         public const string HoverPack = "Hover Pack";
         public const string HighVoltageCable = "High Voltage Cable";
         public const string HVCReachII = "HVC Reach II";
@@ -129,6 +138,7 @@ namespace EquinoxsModUtils
         public const string PackSizeIII = "PackSize III";
         public const string PackSizeIV = "PackSize IV";
         public const string PackSizeV = "PackSize V";
+        public const string BlastIncineration = "Blast Incineration";
         public const string KindlevineThreshing = "Kindlevine Threshing";
         public const string StemThreshing = "Stem Threshing";
         public const string LightStick = "Light Stick";
@@ -137,6 +147,7 @@ namespace EquinoxsModUtils
         public const string MassProductionBasicFrames = "Mass Production (Basic Frames)";
         public const string MassProductionConveyorBelts = "Mass Production (Conveyor Belts)";
         public const string MassProductionBiobrick = "Mass Production (Biobrick)";
+        public const string MassProductionClay = "Mass Production (Clay)";
         public const string MassCollect = "MassCollect";
         public const string MassCollectIII = "MassCollect III";
         public const string MassCollectIV = "MassCollect IV";
@@ -249,6 +260,5 @@ namespace EquinoxsModUtils
         public const string WallsI = "Walls I";
         public const string WallsII = "Walls II";
         public const string WallsIII = "Walls III";
-        public const string WaterWheel = "Water Wheel";
     }
 }

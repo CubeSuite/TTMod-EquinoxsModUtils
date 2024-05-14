@@ -237,8 +237,6 @@ namespace EquinoxsModUtils
             Vector3 thisHologramPos = gridInfo.BottomCenter;
             MachineTypeEnum type = builderInfo.GetInstanceType();
 
-            Debug.Log($"buildDuration: {builderInfo.buildDuration}");
-
             if(type == MachineTypeEnum.Conveyor) {
                 ConveyorBuildInfo.ChainData chainData = (ConveyorBuildInfo.ChainData)nullableChainData;
 
@@ -265,7 +263,7 @@ namespace EquinoxsModUtils
             switch (type) {
                 case MachineTypeEnum.Assembler: hologram = ((AssemblerDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
                 case MachineTypeEnum.Chest: hologram = ((ChestDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
-                case MachineTypeEnum.Drill: hologram = ((ChestDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
+                case MachineTypeEnum.Drill: hologram = ((DrillDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
                 case MachineTypeEnum.Inserter: hologram = ((InserterDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
                 case MachineTypeEnum.LightSticks: hologram = ((LightStickDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
                 case MachineTypeEnum.Planter: hologram = ((PlanterDefinition)builderInfo).GenerateUnbuiltHologramData(); break;
