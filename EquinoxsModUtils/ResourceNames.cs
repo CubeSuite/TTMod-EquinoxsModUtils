@@ -132,6 +132,8 @@ namespace EquinoxsModUtils
         public const string CalycitePlatform1x1 = "Calycite Platform (1x1)";
         public const string CalycitePlatform3x3 = "Calycite Platform (3x3)";
         public const string CalycitePlatform5x5 = "Calycite Platform (5x5)";
+        public const string DiscoBlock1x1 = "Disco Block (1x1)";
+        public const string GlowBlock1x1 = "Glow Block (1x1)";
         public const string Catwalk3x9 = "Catwalk (3x9)";
         public const string Catwalk5x9 = "Catwalk (5x9)";
         public const string CalyciteWall3x3 = "Calycite Wall (3x3)";
@@ -185,6 +187,9 @@ namespace EquinoxsModUtils
         public const string MetalBeam1x1 = "Metal Beam (1x1)";
         public const string MetalBeam1x3 = "Metal Beam (1x3)";
         public const string MetalBeam1x5 = "Metal Beam (1x5)";
+        public const string CalyciteRamp1x1 = "Calycite Ramp (1x1)";
+        public const string CalyciteRamp1x3 = "Calycite Ramp (1x3)";
+        public const string CalyciteRamp1x5 = "Calycite Ramp (1x5)";
         public const string Crate = "Crate";
         public const string SmallFloorPot = "Small Floor Pot";
         public const string WallPot = "Wall Pot";
@@ -201,28 +206,11 @@ namespace EquinoxsModUtils
         public const string HoverPack = "Hover Pack";
         public const string Railrunner = "Railrunner";
         public const string Replacer = "Replacer";
+        public const string LaserPistol = "Laser Pistol";
         public const string SonarTower = "Sonar Tower";
-        public const string Echosketch = "Echosketch";
-        public const string AtlantumPickaxe = "Atlantum Pickaxe";
-        public const string TheMOLEMKII = "The M.O.L.E. MKII";
+        public const string Nexus = "Nexus";
         public const string SpectralCubeGarnet = "Spectral Cube (Garnet)";
         public const string SpectralCubeEmerald = "Spectral Cube (Emerald)";
-        public const string SciFiPogoStick = "SciFiPogoStick";
-        public const string SharkRepellant = "SharkRepellant";
-        public const string DeployableThumper = "DeployableThumper";
-        public const string HugeMech = "HugeMech";
-        public const string MoonHopper = "MoonHopper";
-        public const string RaceCart = "RaceCart";
-        public const string RedFlamesPainterTool = "RedFlamesPainterTool";
-        public const string JumpDrive = "JumpDrive";
-        public const string MoonHopperPad = "MoonHopperPad";
-        public const string RacetrackSegment = "RacetrackSegment";
-        public const string RacetrackGarage = "RacetrackGarage";
-        public const string RacetrackSpeedStation = "RacetrackSpeedStation";
-        public const string DrillOvenMk1 = "DrillOvenMk1";
-        public const string DrillOvenMk2 = "DrillOvenMk2";
-        public const string LaserWall = "LaserWall";
-        public const string LaserWallHorizontal = "LaserWallHorizontal";
 
         public static readonly List<string> SafeResources = new List<string>() {
             ConveyorBelt,
@@ -349,6 +337,8 @@ namespace EquinoxsModUtils
             CalycitePlatform1x1,
             CalycitePlatform3x3,
             CalycitePlatform5x5,
+            DiscoBlock1x1,
+            GlowBlock1x1,
             Catwalk3x9,
             Catwalk5x9,
             CalyciteWall3x3,
@@ -402,6 +392,9 @@ namespace EquinoxsModUtils
             MetalBeam1x1,
             MetalBeam1x3,
             MetalBeam1x5,
+            CalyciteRamp1x1,
+            CalyciteRamp1x3,
+            CalyciteRamp1x5,
             Crate,
             SmallFloorPot,
             WallPot,
@@ -418,7 +411,6 @@ namespace EquinoxsModUtils
             HoverPack,
             Railrunner,
             Replacer,
-            Echosketch
         };
     }
 }

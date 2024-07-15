@@ -35,7 +35,7 @@ namespace EquinoxsModUtils
         // Plugin Details
         private const string MyGUID = "com.equinox.EquinoxsModUtils";
         private const string PluginName = "EquinoxsModUtils";
-        private const string VersionString = "4.0.0";
+        private const string VersionString = "5.1.0";
 
         private static readonly Harmony Harmony = new Harmony(MyGUID);
         public static ManualLogSource Log = new ManualLogSource(PluginName);
@@ -79,6 +79,7 @@ namespace EquinoxsModUtils
 
         public static event EventHandler GameSaved;
         public static event EventHandler GameLoaded;
+        public static event EventHandler GameUnloaded;
 
         // Testing
         // ToDo: Disable before release
@@ -93,6 +94,7 @@ namespace EquinoxsModUtils
             CheckBepInExConfig();
 
             Harmony.CreateAndPatchAll(typeof(FHG_UtilsPatch));
+            Harmony.CreateAndPatchAll(typeof(FlowManagerPatch));
             Harmony.CreateAndPatchAll(typeof(GameDefinesPatch));
             Harmony.CreateAndPatchAll(typeof(LocsUtilityPatch));
             Harmony.CreateAndPatchAll(typeof(SaveStatePatch));
@@ -260,6 +262,10 @@ namespace EquinoxsModUtils
                 GameLoaded?.Invoke(null, EventArgs.Empty);
                 LogEMUInfo("Game Loaded");
             }
+        }
+
+        internal static void TriggerGameUnloaded() {
+            GameUnloaded?.Invoke(null, EventArgs.Empty);
         }
 
         // Add New Techs
@@ -438,6 +444,7 @@ namespace EquinoxsModUtils
                 fileLines.Add($"{name}|{TechTreeState.instance.IsUnlockActive(unlock.uniqueId)}");
             }
 
+            Directory.CreateDirectory(dataFolder);
             string saveFile = $"{dataFolder}/{worldName}.txt";
             File.WriteAllLines(saveFile, fileLines);
         }
@@ -475,6 +482,7 @@ namespace EquinoxsModUtils
                 fileLines.Add($"{dataPair.Key}|{dataPair.Value}");
             }
 
+            Directory.CreateDirectory(dataFolder);
             string saveFile = $"{dataFolder}/{worldName} CustomData.txt";
             File.WriteAllLines(saveFile, fileLines);
         }
@@ -836,7 +844,7 @@ namespace EquinoxsModUtils
                 }
             }
 
-            LogEMUError($"Could not find SchematicsSubHeader with title '{title}'");
+            LogEMUError($"Could not find SchematicsHeader with title '{title}'");
             return null;
         }
 
@@ -846,7 +854,7 @@ namespace EquinoxsModUtils
         /// <param name="title">The title to search for.</param>
         /// <param name="shouldLog">Whether an EMU Info message should be logged on success</param>
         /// <returns>The SchematicsSubHeader if successful, null otherwise</returns>
-        public static SchematicsSubHeader GetSchematicsSubHeaderByTitle(string title, bool shouldLog = false) {
+        public static SchematicsSubHeader GetSchematicsSubHeaderByTitle(string parentTitle, string title, bool shouldLog = false) {
             if (!NullCheck(GameDefines.instance, "GameDefines.instance")) {
                 LogEMUError("GetSchematicsSubHeaderByTitle() called before GameDefines.instance has loaded");
                 LogEMUWarning($"Try using the event ModUtils.GameDefinesLoaded or checking ModUtils.hasGameDefinesLoaded.");
@@ -854,7 +862,7 @@ namespace EquinoxsModUtils
             }
 
             foreach(SchematicsSubHeader subHeader in GameDefines.instance.schematicsSubHeaderEntries) {
-                if (subHeader.title == title) {
+                if (subHeader.title == title && subHeader.filterTag.title == parentTitle) {
                     if (shouldLog) LogEMUInfo($"Found SchematicsSubHeader with title '{title}'");
                     return subHeader;
                 }
@@ -1401,7 +1409,7 @@ namespace EquinoxsModUtils
         /// <param name="original">The object to copy fields from</param>
         /// <param name="target">The object to set fields for</param>
         public static void CloneObject<T>(T original, ref T target) {
-            foreach (FieldInfo fieldInfo in typeof(T).GetFields()) {
+            foreach (FieldInfo fieldInfo in target.GetType().GetFields()) {
                 fieldInfo.SetValue(target, fieldInfo.GetValue(original));
             }
         }

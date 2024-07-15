@@ -41,7 +41,7 @@ namespace EquinoxsModUtils.Patches
                     continue;
                 }
 
-                info.headerType = ModUtils.GetSchematicsSubHeaderByTitle(details.subHeaderTitle);
+                info.headerType = ModUtils.GetSchematicsSubHeaderByTitle(details.headerTitle, details.subHeaderTitle);
 
                 if(info.model3D == null) {
                     ModUtils.LogEMUWarning($"NewResourceDetails '{info.displayName}'.model3D is null, using Parent's instead.");

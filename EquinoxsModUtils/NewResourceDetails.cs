@@ -16,6 +16,7 @@ namespace EquinoxsModUtils
         public int craftTierRequired;
         public string description;
         public float fuelAmount;
+        public string headerTitle;
         public string subHeaderTitle;
         public int maxStackCount = 500;
         public int miningTierRequired;

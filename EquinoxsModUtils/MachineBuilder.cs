@@ -14,6 +14,18 @@ namespace EquinoxsModUtils
 {
     internal static class MachineBuilder
     {
+        // Objects & Variables
+
+        private static List<string> flowerNames = new List<string>() {
+            ResourceNames.SmallFloorPot,
+            ResourceNames.WallPot,
+            ResourceNames.MediumFloorPot,
+            ResourceNames.CeilingPlant1x1,
+            ResourceNames.CeilingPlant3x3,
+            ResourceNames.WallPlant1x1,
+            ResourceNames.WallPlant3x3,
+        };
+
         internal static void buildMachine(int resId, GridInfo gridInfo, bool shouldLog, int variationIndex, int recipe, ConveyorBuildInfo.ChainData? chainData, bool reverseConveyor) {
             MachineTypeEnum type = ModUtils.GetMachineTypeFromResID(resId);
             if(type == MachineTypeEnum.NONE) {
