@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using static EquinoxsModUtils.EMULogging;
 
 namespace EquinoxsModUtils.Patches
 {
@@ -14,11 +15,11 @@ namespace EquinoxsModUtils.Patches
         [HarmonyPatch(typeof(TechTreeGrid), "InitForCategoryHelper")]
         [HarmonyPrefix]
         static bool FixInitForCategoryHelper(TechTreeGrid __instance, Unlock.TechCategory category, bool isPrimary) {
-            TechTreeCategoryContainer[] containers = (TechTreeCategoryContainer[])ModUtils.GetPrivateField("categoryContainers", __instance);
+            TechTreeCategoryContainer[] containers = (TechTreeCategoryContainer[])EMU.GetPrivateField("categoryContainers", __instance);
             List<int> categoryMapping = containers[(int)category].categoryMapping;
             RectTransform nodesXfm = containers[(int)category].nodesXfm;
 
-            Vector2Int[] tierIndices = (Vector2Int[])ModUtils.GetPrivateField("tierIndices", __instance);
+            Vector2Int[] tierIndices = (Vector2Int[])EMU.GetPrivateField("tierIndices", __instance);
 
             int num = -99;
             if (isPrimary) {
@@ -31,8 +32,8 @@ namespace EquinoxsModUtils.Patches
             bool flag = false;
             bool flag2 = false;
 
-            Dictionary<int, float> _tierScrollPositions = (Dictionary<int, float>)ModUtils.GetPrivateField("_tierScrollPositions", __instance);
-            TechTreeNode[] techTreeNodes = (TechTreeNode[])ModUtils.GetPrivateField("techTreeNodes", __instance);
+            Dictionary<int, float> _tierScrollPositions = (Dictionary<int, float>)EMU.GetPrivateField("_tierScrollPositions", __instance);
+            TechTreeNode[] techTreeNodes = (TechTreeNode[])EMU.GetPrivateField("techTreeNodes", __instance);
 
             _tierScrollPositions[0] = 0f;
             for (int j = 0; j < categoryMapping.Count; j++) {
@@ -44,7 +45,7 @@ namespace EquinoxsModUtils.Patches
                 }
                 if (isPrimary) {
                     if (techTreeNodes[num2].myUnlock.requiredTier == TechTreeState.ResearchTier.NONE) {
-                        ModUtils.LogEMUWarning($"Setting Unlock #{techTreeNodes[num2].myUnlock.uniqueId} requiredTier to Tier0");
+                        LogEMUWarning($"Setting Unlock #{techTreeNodes[num2].myUnlock.uniqueId} requiredTier to Tier0");
                         techTreeNodes[num2].myUnlock.requiredTier = TechTreeState.ResearchTier.Tier0;
                     }
                     int num3 = techTreeNodes[num2].myUnlock.requiredTier.ToIndex();
@@ -59,7 +60,7 @@ namespace EquinoxsModUtils.Patches
                         flag = true;
                     }
                 }
-                techTreeNodes[num2].RefreshState();
+                techTreeNodes[num2].RefreshState(new TechTreeGrid.CommonLocStrings());
             }
             if (num >= 0 && num < tierIndices.Length) {
                 vector2Int.y = categoryMapping.Count - 1;
@@ -69,9 +70,9 @@ namespace EquinoxsModUtils.Patches
                 containers[(int)category].InitDependencyLines(techTreeNodes, categoryMapping);
             }
 
-            ModUtils.SetPrivateField("tierIndices", __instance, tierIndices);
-            ModUtils.SetPrivateField("_tierScrollPositions", __instance, _tierScrollPositions);
-            ModUtils.SetPrivateField("techTreeNodes", __instance, techTreeNodes);
+            EMU.SetPrivateField("tierIndices", __instance, tierIndices);
+            EMU.SetPrivateField("_tierScrollPositions", __instance, _tierScrollPositions);
+            EMU.SetPrivateField("techTreeNodes", __instance, techTreeNodes);
 
             return false;
         }

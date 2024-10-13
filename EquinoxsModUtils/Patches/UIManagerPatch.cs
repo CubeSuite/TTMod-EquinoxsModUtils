@@ -25,7 +25,7 @@ namespace EquinoxsModUtils.Patches
                        UIManager.instance.researchMenuOpen || 
                        UIManager.instance.editShortcutMenuOpen || 
                        UIManager.instance.sapTapMenuOpen || 
-                       freeCursor;
+                       freeCursor; // ToDo: Update for 1.0 menus
         }
     }
 }
