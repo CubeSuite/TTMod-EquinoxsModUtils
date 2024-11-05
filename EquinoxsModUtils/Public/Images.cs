@@ -26,6 +26,10 @@ namespace EquinoxsModUtils
             public static Texture2D GetImageForResource(string name, bool shouldLog = false) {
                 ResourceInfo info = Resources.GetResourceInfoByName(name, shouldLog);
                 if (info == null) return null;
+                if (info.sprite == null) {
+                    LogEMUWarning($"Resource '{info.displayName}' has no sprite. Returning null.");
+                    return null;
+                }
 
                 Sprite sprite = info.sprite;
                 if (sprite.rect.width != sprite.texture.width) {
@@ -48,9 +52,10 @@ namespace EquinoxsModUtils
             /// </summary>
             /// <param name="resourceName">The path of the Embedded Resource image.</param>
             /// <param name="shouldLog">Whether an EMU Info message should be logged on successful load.</param>
+            /// <param name="assembly">Ignore this, internal use.</param>
             /// <returns>Texture2D if file is found, null otherwise</returns>
-            public static Texture2D LoadTexture2DFromFile(string resourceName, bool shouldLog = false) {
-                Assembly assembly = Assembly.GetCallingAssembly();
+            public static Texture2D LoadTexture2DFromFile(string resourceName, bool shouldLog = false, Assembly assembly = null) {
+                if (assembly == null) assembly = Assembly.GetCallingAssembly();
 
                 string[] resourceNames = assembly.GetManifestResourceNames();
                 string fullPath = Array.Find(resourceNames, name => name.EndsWith(resourceName));
@@ -70,7 +75,7 @@ namespace EquinoxsModUtils
                         stream.CopyTo(memoryStream);
                         byte[] fileData = memoryStream.ToArray();
 
-                        Texture2D output = new Texture2D(2, 2);
+                        Texture2D output = new Texture2D(2, 2, TextureFormat.RGBA32, false);
                         output.LoadImage(fileData);
 
                         if (shouldLog) LogEMUInfo($"Created Texture2D from image resource '{resourceName}'");
@@ -87,7 +92,7 @@ namespace EquinoxsModUtils
             /// <param name="shouldLog">Passed to LoadTexture2DFromFile()</param>
             /// <returns></returns>
             public static Sprite LoadSpriteFromFile(string path, bool shouldLog = false) {
-                Texture2D texture = LoadTexture2DFromFile(path, shouldLog);
+                Texture2D texture = LoadTexture2DFromFile(path, shouldLog, Assembly.GetCallingAssembly());
                 return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0, 0), 512);
             }
         }

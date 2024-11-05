@@ -84,13 +84,14 @@
     <Compile Include="Public\LoadingStates.cs" />
     <Compile Include="Public\Names.cs" />
     <Compile Include="Public\Resources.cs" />
-    <Compile Include="Public\Schematics.cs" />
+    <Compile Include="Public\Recipes.cs" />
     <Compile Include="Public\Unlocks.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>mkdir "C:\Program Files (x86)\Steam\steamapps\common\Techtonica\BepInEx\plugins\$(TargetName)"
-xcopy /q/y/i "$(TargetPath)" "C:\Program Files (x86)\Steam\steamapps\common\Techtonica\BepInEx\plugins\$(TargetName)" /E /H /C</PostBuildEvent>
+xcopy /q/y/i "$(TargetPath)" "C:\Program Files (x86)\Steam\steamapps\common\Techtonica\BepInEx\plugins\$(TargetName)" /E /H /C
+xcopy /q/y/i "$(TargetDir)$(TargetName).xml" "C:\Program Files (x86)\Steam\steamapps\common\Techtonica\BepInEx\plugins\$(TargetName)" /E /H /C</PostBuildEvent>
   </PropertyGroup>
 </Project>

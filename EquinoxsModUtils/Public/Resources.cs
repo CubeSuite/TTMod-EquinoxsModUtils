@@ -93,18 +93,13 @@ namespace EquinoxsModUtils
             /// <returns>resID if successful, -1 otherwise</returns>
             public static int GetResourceIDByName(string name, bool shouldLog = false) {
                 if (shouldLog) LogEMUInfo($"Looking for ID of resource with name '{name}'");
-                if (LoadingStates.hasSaveStateLoaded) {
+                if (LoadingStates.hasGameDefinesLoaded) {
                     ResourceInfo info = GetResourceInfoByName(name);
-                    if (info != null) {
-                        return SaveState.GetIdForResInfo(info);
-                    }
-                    else {
-                        return -1;
-                    }
+                    return info?.uniqueId ?? -1;
                 }
                 else {
-                    LogEMUWarning("GetResourceIDByName() was called before SaveState.instance has loaded");
-                    LogEMUWarning("Try using the event EMU.Events.SaveStateLoaded or checking with EMU.LoadingStates.hasSaveStateLoaded");
+                    LogEMUError("GetResourceIDByName() was called before GameDefines.instance has loaded");
+                    LogEMUWarning("Try using the event EMU.Events.GameDefinesLoaded or checking with EMU.LoadingStates.hasGameDefinesLoaded");
                     return -1;
                 }
             }

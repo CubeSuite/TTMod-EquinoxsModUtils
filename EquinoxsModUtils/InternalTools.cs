@@ -13,6 +13,7 @@ namespace EquinoxsModUtils
         // Members
         internal static bool printResources = false;
         internal static bool printUnlocks = false;
+        internal static bool isCursorFree = false;
 
         // Internal Functions
 

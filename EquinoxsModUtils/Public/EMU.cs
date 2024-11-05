@@ -117,6 +117,9 @@ namespace EquinoxsModUtils
         /// </summary>
         /// <param name="free">True to free the cursor, false to lock it to the center of the screen again.</param>
         public static void FreeCursor(bool free) {
+            if (free && InternalTools.isCursorFree) return;
+            if (!free && !InternalTools.isCursorFree) return;
+
             InputHandler.instance.uiInputBlocked = free;
             InputHandler.instance.playerAimStickBlocked = free;
             Cursor.lockState = free ? CursorLockMode.None : CursorLockMode.Locked;

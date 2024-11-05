@@ -128,6 +128,24 @@ namespace EquinoxsModUtils
             }
 
             /// <summary>
+            /// Tries to find the SchematicsHeader with a title matching the one in the argument without checking if GameDefines loaded.
+            /// </summary>
+            /// <param name="title">The title to search for.</param>
+            /// <param name="shouldLog">Whether an EMU Info message should be logged on success</param>
+            /// <returns>The SchematicsHeader if successful, null otherwise</returns>
+            public static SchematicsHeader GetSchematicsHeaderByTitleUnsafe(string title, bool shouldLog = false) {
+                foreach (SchematicsHeader header in GameDefines.instance.schematicsHeaderEntries) {
+                    if (header.title == title) {
+                        if (shouldLog) LogEMUInfo($"Found SchematicsHeader with title '{title}'");
+                        return header;
+                    }
+                }
+
+                LogEMUError($"Could not find SchematicsHeader with title '{title}'");
+                return null;
+            }
+
+            /// <summary>
             /// Tries to find the SchematicsSubHeader with a title matching the one in the argument
             /// </summary>
             /// <param name="parentTitle">The title of the parent SchematicsHeader</param>
@@ -141,6 +159,25 @@ namespace EquinoxsModUtils
                     return null;
                 }
 
+                foreach (SchematicsSubHeader subHeader in GameDefines.instance.schematicsSubHeaderEntries) {
+                    if (subHeader.title == title && subHeader.filterTag.title == parentTitle) {
+                        if (shouldLog) LogEMUInfo($"Found SchematicsSubHeader with title '{title}'");
+                        return subHeader;
+                    }
+                }
+
+                LogEMUError($"Could not find SchematicsSubHeader with title '{title}'");
+                return null;
+            }
+
+            /// <summary>
+            /// Tries to find the SchematicsSubHeader with a title matching the one in the argument without checking if GameDefines has loaded
+            /// </summary>
+            /// <param name="parentTitle">The title of the parent SchematicsHeader</param>
+            /// <param name="title">The title to search for</param>
+            /// <param name="shouldLog">Whether an EMU Info message should be logged on success</param>
+            /// <returns>The SchematicsSubHeader if successful, null otherwise</returns>
+            public static SchematicsSubHeader GetSchematicsSubHeaderByTitleUnsafe(string parentTitle, string title, bool shouldLog = false) {
                 foreach (SchematicsSubHeader subHeader in GameDefines.instance.schematicsSubHeaderEntries) {
                     if (subHeader.title == title && subHeader.filterTag.title == parentTitle) {
                         if (shouldLog) LogEMUInfo($"Found SchematicsSubHeader with title '{title}'");
