@@ -71,9 +71,40 @@ public static ResourceInfo GetResourceInfoByName (
 )
 ```
 
-This function allows you to find the ResourceInfo of any item by using its display name. Returns `null` if not found. Example use:
+This function allows you to find the ResourceInfo of any item by using its display name. Returns `null` if not found. `shouldLog` controls whether info messages should be logged for this call.
+
+Example use:
 
 ```csharp
 ResourceInfo ironFrame = EMU.Resources.GetResourceInfoByName(EMU.Names.Resources.IronFrame);
 Player.instance.inventory.AddResources(ironFrame, 1);
+```
+
+##### GetResourceInfoByNameUnsafe
+
+```csharp
+public static ResourceInfo GetResourceInfoByNameUnsafe(
+  string name,
+  bool shouldLog = false
+)
+```
+
+Does the same as [GetResourceInfoByName](#getresourceinfobyname), but won't check `EMU.LoadingStates.hasGameDefinesLoaded` first. Only ever use this in patches of `GameDefines` functions.
+
+##### GetResourceIDByName
+
+```csharp
+public static int GetResourceIDByName(
+  string name,
+  bool shouldLog = false
+)
+```
+
+Finds a Resource by it's `displayName` field and returns it's `uniqueId` field.
+
+Example use:
+
+```csharp
+int ironFrameID = EMU.Resources.GetResourceIDNyName(EMU.Names.Resources.IronFrame);
+Player.instance.inventory.AddResources(ironFrameID, 1);
 ```
