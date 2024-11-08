@@ -50,24 +50,25 @@ namespace EquinoxsModUtils
             /// <summary>
             /// Creates a Texture2D from the Embedded Resource at the path provided in the argument.
             /// </summary>
-            /// <param name="resourceName">The path of the Embedded Resource image.</param>
+            /// <param name="path">The path of the Embedded Resource image.</param>
             /// <param name="shouldLog">Whether an EMU Info message should be logged on successful load.</param>
             /// <param name="assembly">Ignore this, internal use.</param>
             /// <returns>Texture2D if file is found, null otherwise</returns>
-            public static Texture2D LoadTexture2DFromFile(string resourceName, bool shouldLog = false, Assembly assembly = null) {
+            public static Texture2D LoadTexture2DFromFile(string path, bool shouldLog = false, Assembly assembly = null) {
                 if (assembly == null) assembly = Assembly.GetCallingAssembly();
 
                 string[] resourceNames = assembly.GetManifestResourceNames();
-                string fullPath = Array.Find(resourceNames, name => name.EndsWith(resourceName));
+                string fullPath = Array.Find(resourceNames, name => name.EndsWith(path));
 
                 if (fullPath == null) {
-                    LogEMUError($"Could not find image resource '{resourceName}' in mod assembly.");
+                    LogEMUError($"Could not find image resource '{path}' in mod assembly.");
+                    LogEMUInfo($"Available resources are: {string.Join(", ", resourceNames)}");
                     return null;
                 }
 
                 using (Stream stream = assembly.GetManifestResourceStream(fullPath)) {
                     if (stream == null) {
-                        LogEMUError($"Could not load image resource '{resourceName}' from mod assembly stream.");
+                        LogEMUError($"Could not load image resource '{path}' from mod assembly stream.");
                         return null;
                     }
 
@@ -78,7 +79,7 @@ namespace EquinoxsModUtils
                         Texture2D output = new Texture2D(2, 2, TextureFormat.RGBA32, false);
                         output.LoadImage(fileData);
 
-                        if (shouldLog) LogEMUInfo($"Created Texture2D from image resource '{resourceName}'");
+                        if (shouldLog) LogEMUInfo($"Created Texture2D from image resource '{path}'");
 
                         return output;
                     }

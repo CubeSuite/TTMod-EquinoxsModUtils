@@ -125,7 +125,21 @@ namespace EquinoxsModUtils
             Cursor.lockState = free ? CursorLockMode.None : CursorLockMode.Locked;
             Cursor.visible = free;
             UIManagerPatch.freeCursor = free;
+            InternalTools.isCursorFree = free;
         }
 
+        /// <summary>
+        /// Displays a notification at the top of the screen
+        /// </summary>
+        /// <param name="message">The text to display</param>
+        public static void Notify(string message) {
+            UIManager.instance.systemLog.FlashMessage(new CustomSystemMessage(message));
+        }
+    }
+
+    class CustomSystemMessage : SystemMessageInfo
+    {
+        public CustomSystemMessage(string message) : base(message) { }
+        public override MessageType type => MessageType.Tutorial;
     }
 }
