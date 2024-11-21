@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 using static EquinoxsModUtils.EMULogging;
+using static RootMotion.FinalIK.InteractionObject;
 
 namespace EquinoxsModUtils
 {
@@ -14,6 +17,9 @@ namespace EquinoxsModUtils
         internal static bool printResources = false;
         internal static bool printUnlocks = false;
         internal static bool isCursorFree = false;
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern int MessageBox(IntPtr hWnd, String text, String caption, int type);
 
         // Internal Functions
 
@@ -41,12 +47,18 @@ namespace EquinoxsModUtils
             if (File.Exists(configFile)) {
                 string text = File.ReadAllText(configFile);
                 if (!text.Contains("HideManagerGameObject = true")) {
-                    LogEMUError("HideGameManagerObject has not been set to true in BepInEx.cfg");
-                    LogEMUError("Equinox's Mod Utils and any mods that use this library will not work if this is not enabled");
+                    text = text.Replace("HideManagerGameObject = false", "HideManagerGameObject = true");
+                    File.WriteAllText(configFile, text);
+
+                    MessageBox(IntPtr.Zero, "Techtonica needs to restart to activate mods, after it closes, please launch it again.", "Please Restart", 0x00000040);
+                    Application.Quit();
                 }
                 else {
                     LogEMUInfo("HideGameManagerObject has been correctly set to true");
                 }
+            }
+            else {
+                LogEMUError("Couldn't check BepInEx.cfg - doesn't exist");
             }
         }
     }

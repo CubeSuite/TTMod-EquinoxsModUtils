@@ -15,7 +15,8 @@ namespace EquinoxsModUtils
         public static class LoadingStates
         {
             // Members
-            private static bool loadingUIObserved = false;
+            internal static bool loadingUIObserved = false;
+            internal static bool shouldMonitorLoadingStates = true;
 
             /// <summary>
             /// Set to true once GameState.instance is no longer null
@@ -51,6 +52,7 @@ namespace EquinoxsModUtils
 
             internal static void CheckLoadingStates() {
                 if (hasGameLoaded) return;
+                if (!shouldMonitorLoadingStates) return;
 
                 if (!hasGameStateLoaded) CheckIfGameStateLoaded();
                 if (!hasGameDefinesLoaded) CheckIfGameDefinesLoaded();
@@ -60,6 +62,16 @@ namespace EquinoxsModUtils
                 if (!hasGameLoaded) CheckIfGameLoaded();
             }
 
+            internal static void ResetLoadingStates() {
+                loadingUIObserved = false;
+                hasGameStateLoaded = false;
+                hasGameDefinesLoaded = false;
+                hasMachineManagerLoaded = false;
+                hasSaveStateLoaded = false;
+                hasTechTreeStateLoaded = false;
+                hasGameLoaded = false;
+            }
+
             // Private Functions
 
             private static void CheckIfGameStateLoaded() {
@@ -67,7 +79,6 @@ namespace EquinoxsModUtils
                 if (GameState.instance != null) {
                     hasGameStateLoaded = true;
                     Events.FireGameStateLoaded();
-                    LogEMUInfo("GameState.intance loaded.");
                 }
             }
 
@@ -76,16 +87,6 @@ namespace EquinoxsModUtils
                 if (GameDefines.instance != null) {
                     hasGameDefinesLoaded = true;
                     Events.FireGameDefinesLoaded();
-                    LogEMUInfo("GameDefines.instace loaded");
-
-                    // ToDo: Remove if not needed
-                    //foreach (Unlock unlock in GameDefines.instance.unlocks) {
-                    //    string name = LocsUtility.TranslateStringFromHash(unlock.displayNameHash);
-                    //    if (unlock.requiredTier == TechTreeState.ResearchTier.NONE) {
-                    //        LogEMUWarning($"Unlock '{name}' has required Tier NONE, setting to Tier0");
-                    //        unlock.requiredTier = TechTreeState.ResearchTier.Tier0;
-                    //    }
-                    //}
 
                     if (InternalTools.printResources) InternalTools.PrintAllResourceNames();
                     if (InternalTools.printUnlocks) InternalTools.PrintAllUnlockNames();
@@ -101,7 +102,6 @@ namespace EquinoxsModUtils
                 hasSaveStateLoaded = true;
 
                 Events.FireSaveStateLoaded();
-                LogEMUInfo("SaveState.instance loaded");
             }
 
             private static void CheckIfTechTreeStateLoaded() {
@@ -110,7 +110,6 @@ namespace EquinoxsModUtils
                     hasTechTreeStateLoaded = true;
 
                     Events.FireTechTreeStateLoaded();
-                    LogEMUInfo("TechTreeState.instance loaded");
                 }
             }
 
@@ -118,7 +117,6 @@ namespace EquinoxsModUtils
                 if (MachineManager.instance == null) return;
                 hasMachineManagerLoaded = true;
                 Events.FireMachineManagerLoaded();
-                LogEMUInfo("MachineManager.instance loaded");
             }
 
             private static void CheckIfGameLoaded() {
@@ -133,8 +131,8 @@ namespace EquinoxsModUtils
 
                 else if (LoadingUI.instance == null && loadingUIObserved) {
                     hasGameLoaded = true;
+                    shouldMonitorLoadingStates = false;
                     Events.FireGameLoaded();
-                    LogEMUInfo("Game Loaded");
                 }
             }
         }

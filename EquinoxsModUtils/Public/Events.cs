@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static EquinoxsModUtils.EMULogging;
 
 namespace EquinoxsModUtils
 {
@@ -63,34 +64,42 @@ namespace EquinoxsModUtils
             // Internal Functions
 
             internal static void FireGameStateLoaded() {
+                LogEMUInfo("GameState.instance has loaded");
                 GameStateLoaded?.Invoke();
             }
 
             internal static void FireGameDefinesLoaded() {
+                LogEMUInfo("GameDefines.instance has loaded");
                 GameDefinesLoaded?.Invoke();
             }
 
             internal static void FireMachineManagerLoaded() {
+                LogEMUInfo("MachineManager.instance has loaded");
                 MachineManagerLoaded?.Invoke();
             }
 
             internal static void FireSaveStateLoaded() {
+                LogEMUInfo("SaveState.instance has loaded");
                 SaveStateLoaded?.Invoke(SaveState.instance.metadata.worldName, EventArgs.Empty);
             }
 
             internal static void FireTechTreeStateLoaded() {
+                LogEMUInfo("TechTreeState.instance has loaded");
                 TechTreeStateLoaded?.Invoke();
             }
 
             internal static void FireGameSaved() {
+                LogEMUInfo("Game has been saved");
                 GameSaved?.Invoke(SaveState.instance.metadata.worldName, EventArgs.Empty);
             }
 
             internal static void FireGameLoaded() {
+                LogEMUInfo("Game has loaded");
                 GameLoaded?.Invoke();
             }
 
             internal static void FireGameUnloaded() {
+                LogEMUInfo("Game has unloaded");
                 GameUnloaded?.Invoke();
             }
         }
