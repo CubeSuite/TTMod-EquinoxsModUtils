@@ -2,6 +2,8 @@
 using BepInEx.Logging;
 using EquinoxsModUtils.Patches;
 using HarmonyLib;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace EquinoxsModUtils
 {
@@ -11,7 +13,7 @@ namespace EquinoxsModUtils
         // Plugin Details
         private const string MyGUID = "com.equinox.EquinoxsModUtils";
         private const string PluginName = "EquinoxsModUtils";
-        private const string VersionString = "6.0.0";
+        private const string VersionString = "6.1.3";
 
         private static readonly Harmony Harmony = new Harmony(MyGUID);
         internal static ManualLogSource Log = new ManualLogSource(PluginName);
